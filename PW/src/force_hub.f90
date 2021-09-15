@@ -40,7 +40,7 @@ SUBROUTINE force_hub( forceh )
                                     deallocate_bec_type
    USE uspp,                 ONLY : nkb, vkb, ofsbeta, using_vkb
    USE uspp_param,           ONLY : nh
-   USE wavefunctions,        ONLY : evc
+   USE wavefunctions_gpum,        ONLY : evc_d
    USE klist,                ONLY : nks, xk, ngk, igk_k
    USE io_files,             ONLY : nwordwfc, iunwfc, nwordwfcU
    USE buffers,              ONLY : get_buffer
@@ -131,7 +131,7 @@ SUBROUTINE force_hub( forceh )
       !
       IF (nks > 1)  CALL using_evc(2)
       IF (nks > 1) &
-         CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+         CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
       !
       CALL using_vkb(2)
       !
@@ -139,8 +139,8 @@ SUBROUTINE force_hub( forceh )
       ! Compute spsi = S * psi
       CALL allocate_bec_type ( nkb, nbnd, becp)
       CALL using_becp_auto(2)
-      CALL calbec( npw, vkb, evc, becp )
-      CALL s_psi( npwx, npw, nbnd, evc, spsi )
+      CALL calbec( npw, vkb, evc_d, becp )
+      CALL s_psi( npwx, npw, nbnd, evc_d, spsi )
       CALL deallocate_bec_type (becp) 
       CALL using_becp_auto(2)
       !
@@ -148,7 +148,7 @@ SUBROUTINE force_hub( forceh )
       ! contains Hubbard-U (ortho-)atomic wavefunctions (without ultrasoft S)
       CALL orthoUwfc2 (ik)
       !
-      ! proj=<wfcU|S|evc>
+      ! proj=<wfcU|S|evc_d>
       CALL calbec( npw, wfcU, spsi, proj )
       !
       ! now we need the first derivative of proj with respect to tau(alpha,ipol)
@@ -313,7 +313,7 @@ SUBROUTINE dndtau_k ( ldim, proj, spsi, alpha, jkb0, ipol, ik, nb_s, &
    USE wvfct,                ONLY : nbnd, npwx, wg
    USE mp_pools,             ONLY : intra_pool_comm, me_pool, nproc_pool
    USE mp,                   ONLY : mp_sum
-   USE wavefunctions,        ONLY : evc
+   USE wavefunctions_gpum,        ONLY : evc_d
    USE uspp,                 ONLY : okvan
    USE force_mod,            ONLY : doverlap_inv
    USE basis,                ONLY : natomwfc
@@ -327,7 +327,7 @@ SUBROUTINE dndtau_k ( ldim, proj, spsi, alpha, jkb0, ipol, ik, nb_s, &
    COMPLEX (DP), INTENT(IN) :: proj(nwfcU,nbnd)
    !! projection
    COMPLEX(DP), INTENT(IN) :: spsi(npwx,nbnd)
-   !! \(S|\ \text{evc}\rangle\)
+   !! \(S|\ \text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom index
    INTEGER, INTENT(IN) :: jkb0
@@ -369,7 +369,7 @@ SUBROUTINE dndtau_k ( ldim, proj, spsi, alpha, jkb0, ipol, ik, nb_s, &
    IF (okvan) THEN
       ALLOCATE ( dproj_us(nwfcU,nb_s:nb_e) )
       CALL matrix_element_of_dSdtau (alpha, ipol, ik, jkb0, &
-                        nwfcU, wfcU, nbnd, evc, dproj_us, nb_s, nb_e, mykey)
+                        nwfcU, wfcU, nbnd, evc_d, dproj_us, nb_s, nb_e, mykey)
    ENDIF
    !
    ! In the 'ortho-atomic' case calculate d[(O^{-1/2})^T]
@@ -501,7 +501,7 @@ SUBROUTINE dndtau_gamma ( ldim, rproj, spsi, alpha, jkb0, ipol, ik, &
    REAL(DP), INTENT(IN) ::  rproj(nwfcU,nbnd)
    !! projection
    COMPLEX(DP), INTENT(IN) :: spsi(npwx,nbnd)
-   !! \(S\ |\text{evc}\rangle\)
+   !! \(S\ |\text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom index
    INTEGER, INTENT(IN) :: jkb0
@@ -638,7 +638,7 @@ SUBROUTINE dngdtau_k ( ldim, proj, spsi, alpha, jkb0, ipol, ik, nb_s, &
    USE wvfct,                ONLY : nbnd, npwx, npw, wg
    USE mp_pools,             ONLY : intra_pool_comm, me_pool, nproc_pool
    USE mp,                   ONLY : mp_sum
-   USE wavefunctions,        ONLY : evc
+   USE wavefunctions_gpum,        ONLY : evc_d
    USE uspp,                 ONLY : okvan
    USE force_mod,            ONLY : doverlap_inv
    USE basis,                ONLY : natomwfc
@@ -652,7 +652,7 @@ SUBROUTINE dngdtau_k ( ldim, proj, spsi, alpha, jkb0, ipol, ik, nb_s, &
    COMPLEX (DP), INTENT(IN) :: proj(nwfcU,nbnd)
    !! projection
    COMPLEX (DP), INTENT(IN) :: spsi(npwx,nbnd)
-   !! \(S|\ \text{evc}\rangle\)
+   !! \(S|\ \text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom index
    INTEGER, INTENT(IN) :: jkb0
@@ -699,7 +699,7 @@ SUBROUTINE dngdtau_k ( ldim, proj, spsi, alpha, jkb0, ipol, ik, nb_s, &
    IF (okvan) THEN
       ALLOCATE ( dproj_us(nwfcU,nb_s:nb_e) )
       CALL matrix_element_of_dSdtau (alpha, ipol, ik, jkb0, &
-                        nwfcU, wfcU, nbnd, evc, dproj_us, nb_s, nb_e, mykey)
+                        nwfcU, wfcU, nbnd, evc_d, dproj_us, nb_s, nb_e, mykey)
    ENDIF
    !
    IF (U_projection.EQ."atomic") THEN
@@ -854,7 +854,7 @@ SUBROUTINE dngdtau_gamma ( ldim, rproj, spsi, alpha, jkb0, ipol, ik, nb_s, &
    REAL (DP), INTENT(IN) :: rproj(nwfcU,nbnd)
    !! projection
    COMPLEX(DP), INTENT(IN) :: spsi(npwx,nbnd)
-   !! \(S\ |\text{evc}\rangle\)
+   !! \(S\ |\text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom index
    INTEGER, INTENT(IN) :: jkb0
@@ -1016,7 +1016,7 @@ SUBROUTINE dprojdtau_k( spsi, alpha, na, ijkb0, ipol, ik, nb_s, nb_e, mykey, dpr
    USE wvfct,                ONLY : nbnd, npwx, wg
    USE uspp,                 ONLY : nkb, vkb, okvan
    USE uspp_param,           ONLY : nh
-   USE wavefunctions,        ONLY : evc
+   USE wavefunctions_gpum,        ONLY : evc_d
    USE becmod,               ONLY : bec_type, becp, calbec, allocate_bec_type, &
                                     deallocate_bec_type
    USE mp_bands,             ONLY : intra_bgrp_comm
@@ -1030,7 +1030,7 @@ SUBROUTINE dprojdtau_k( spsi, alpha, na, ijkb0, ipol, ik, nb_s, nb_e, mykey, dpr
    ! I/O variables
    !
    COMPLEX(DP), INTENT(IN) :: spsi(npwx,nbnd)
-   !! \(S\ |\text{evc}\rangle\)
+   !! \(S\ |\text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom
    INTEGER, INTENT(IN) :: na
@@ -1382,7 +1382,7 @@ SUBROUTINE matrix_element_of_dSdtau (alpha, ipol, ik, ijkb0, lA, A, lB, B, A_dS_
    USE uspp,                 ONLY : nkb, vkb, qq_at, okvan, using_vkb
    USE uspp_param,           ONLY : nh
    USE klist,                ONLY : igk_k, ngk
-   USE wavefunctions,        ONLY : evc
+   USE wavefunctions_gpum,        ONLY : evc_d
    USE becmod,               ONLY : calbec
    USE wavefunctions_gpum,   ONLY : using_evc
    !
@@ -1530,7 +1530,7 @@ SUBROUTINE dprojdtau_gamma( spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, &
    USE wvfct,                ONLY : nbnd, npwx,  wg
    USE uspp,                 ONLY : nkb, vkb, qq_at, using_vkb
    USE uspp_param,           ONLY : nh
-   USE wavefunctions,        ONLY : evc
+   USE wavefunctions_gpum,        ONLY : evc_d
    USE becmod,               ONLY : bec_type, becp, calbec
    USE mp_bands,             ONLY : intra_bgrp_comm
    USE mp_pools,             ONLY : intra_pool_comm, me_pool, nproc_pool
@@ -1542,7 +1542,7 @@ SUBROUTINE dprojdtau_gamma( spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, &
    ! I/O variables
    !
    COMPLEX(DP), INTENT(IN) :: spsi(npwx,nbnd)
-   !! \(S\ |\text{evc}\rangle\)
+   !! \(S\ |\text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom
    INTEGER, INTENT(IN) :: ijkb0
@@ -1572,8 +1572,8 @@ SUBROUTINE dprojdtau_gamma( spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, &
                             betapsi0(:,:)
    !      dwfc(npwx,ldim),       ! the derivative of the atomic wavefunction
    !      dbeta(npwx,nhm),       ! the derivative of the beta function
-   !      betapsi(nhm,nbnd),     ! <beta|evc>
-   !      dbetapsi(nhm,nbnd),    ! <dbeta|evc>
+   !      betapsi(nhm,nbnd),     ! <beta|evc_d>
+   !      dbetapsi(nhm,nbnd),    ! <dbeta|evc_d>
    !      wfatbeta(nwfcU,nhm),   ! <wfcU|beta>
    !      wfatdbeta(nwfcU,nhm)   ! <wfcU|dbeta>
    !
@@ -1672,7 +1672,7 @@ SUBROUTINE dprojdtau_gamma( spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, &
    !
    CALL calbec( npw, wfcU, dbeta, wfatbeta ) 
    CALL using_evc(0)
-   CALL calbec( npw, dbeta, evc, betapsi0 )
+   CALL calbec( npw, dbeta, evc_d, betapsi0 )
    !
 ! !omp parallel do default(shared) private(ih,ig,gvec)
    DO ih = 1, nh(nt)
@@ -1684,7 +1684,7 @@ SUBROUTINE dprojdtau_gamma( spsi, alpha, ijkb0, ipol, ik, nb_s, nb_e, &
 ! !omp end parallel do
    !
    CALL using_evc(0)
-   CALL calbec( npw, dbeta, evc, dbetapsi ) 
+   CALL calbec( npw, dbeta, evc_d, dbetapsi ) 
    CALL calbec( npw, wfcU, dbeta, wfatdbeta ) 
    DEALLOCATE( dbeta )
    !

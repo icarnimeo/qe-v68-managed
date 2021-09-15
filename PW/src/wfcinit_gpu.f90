@@ -26,7 +26,7 @@ SUBROUTINE wfcinit_gpu()
                                    diropn, xmlfile, restart_dir
   USE buffers,              ONLY : open_buffer, close_buffer, get_buffer, save_buffer
   USE uspp,                 ONLY : nkb, vkb, vkb_d, using_vkb_d
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   USE wvfct,                ONLY : nbnd, current_k
   USE wannier_new,          ONLY : use_wannier
   USE pw_restart_new,       ONLY : read_collected_wfc
@@ -85,8 +85,8 @@ SUBROUTINE wfcinit_gpu()
      IF ( twfcollect_file ) THEN
         !
         DO ik = 1, nks
-           CALL read_collected_wfc ( dirname, ik, evc )
-           CALL save_buffer ( evc, nwordwfc, iunwfc, ik )
+           CALL read_collected_wfc ( dirname, ik, evc_d )
+           CALL save_buffer ( evc_d, nwordwfc, iunwfc, ik )
         END DO
         !
      ELSE IF ( exst_sum /= 0 ) THEN
@@ -109,7 +109,7 @@ SUBROUTINE wfcinit_gpu()
            INQUIRE (unit = iunwfc, opened = opnd_file)
            IF ( .NOT.opnd_file ) CALL diropn( iunwfc, 'wfc', 2*nwordwfc, exst )
            CALL using_evc(2)
-           CALL davcio ( evc, 2*nwordwfc, iunwfc, nks, -1 )
+           CALL davcio ( evc_d, 2*nwordwfc, iunwfc, nks, -1 )
            IF ( .NOT.opnd_file ) CLOSE ( UNIT=iunwfc, STATUS='keep' )
         END IF
      END IF
@@ -189,7 +189,7 @@ SUBROUTINE wfcinit_gpu()
      !
      IF ( nks > 1 .OR. (io_level > 1) .OR. lelfield ) CALL using_evc(0)
      IF ( nks > 1 .OR. (io_level > 1) .OR. lelfield ) &
-         CALL save_buffer ( evc, nwordwfc, iunwfc, ik )
+         CALL save_buffer ( evc_d, nwordwfc, iunwfc, ik )
      !
   END DO
   !
@@ -351,7 +351,7 @@ SUBROUTINE init_wfc_gpu ( ik )
   !
   ! when band parallelization is active, the first band group distributes
   ! the wfcs to the others making sure all bgrp have the same starting wfc
-  ! FIXME: maybe this should be done once evc are computed, not here?
+  ! FIXME: maybe this should be done once evc_d are computed, not here?
   !
   IF( nbgrp > 1 ) CALL mp_bcast( wfcatom_d, root_bgrp_id, inter_bgrp_comm )
   !
@@ -377,7 +377,7 @@ SUBROUTINE init_wfc_gpu ( ik )
   !
   IF ( xclib_dft_is('hybrid')  ) CALL stop_exx()
   CALL start_clock_gpu( 'wfcinit:wfcrot' ); !write(*,*) 'start wfcinit:wfcrot' ; FLUSH(6)
-  CALL using_evc_d(2)  ! rotate_wfc_gpu (..., evc_d, etatom_d) -> evc : out (not specified)
+  CALL using_evc_d(2)  ! rotate_wfc_gpu (..., evc_d, etatom_d) -> evc_d : out (not specified)
   CALL rotate_wfc_gpu ( npwx, ngk(ik), n_starting_wfc, gstart, nbnd, wfcatom_d, npol, okvan, evc_d, etatom_d )
   CALL stop_clock_gpu( 'wfcinit:wfcrot' ); !write(*,*) 'stop wfcinit:wfcrot' ; FLUSH(6)
   !

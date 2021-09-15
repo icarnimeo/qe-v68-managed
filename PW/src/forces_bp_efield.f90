@@ -60,7 +60,7 @@ SUBROUTINE forces_us_efield( forces_bp, pdir, e_field )
    USE lsda_mod,             ONLY : nspin
    USE klist,                ONLY : nelec, degauss, nks, xk, wk, ngk, igk_k
    USE wvfct,                ONLY : npwx, nbnd
-   USE wavefunctions,        ONLY : evc
+   USE wavefunctions_gpum,        ONLY : evc_d
    USE bp,                   ONLY : nppstr_3d, mapgm_global, nx_el, mapg_owner
    USE fixed_occ
    USE mp,                   ONLY : mp_sum,mp_barrier

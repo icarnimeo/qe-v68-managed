@@ -141,7 +141,7 @@ module hdf5_qe
    character*12                   :: kstring  
    write(kstring,'(I0)') kpoint
    kstring=trim('KPOINT')//kstring
-   hdf5desc%dsetname = 'evc'
+   hdf5desc%dsetname = 'evc_d'
 
    CALL h5gcreate_f(hdf5desc%file_id, kstring, hdf5desc%group_id, error)
    CALL h5screate_simple_f(hdf5desc%rank, hdf5desc%counts_g, hdf5desc%filespace, error) !define HDF5 dataset
@@ -632,7 +632,7 @@ module hdf5_qe
     implicit none
     integer, intent(in) :: n1, n2, comm
     type(HDF5_type), intent(inout) ::  hdf5desc
-    hdf5desc%dsetname="evc"
+    hdf5desc%dsetname="evc_d"
     hdf5desc%comm=comm
     hdf5desc%rank =2 
     hdf5desc%chunk_dim=(/n1,n2/)

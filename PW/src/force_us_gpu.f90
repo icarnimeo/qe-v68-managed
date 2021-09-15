@@ -23,7 +23,6 @@ SUBROUTINE force_us_gpu( forcenl )
   USE wvfct,                ONLY : nbnd, npwx, wg, et
   USE lsda_mod,             ONLY : lsda, current_spin, isk, nspin
   USE symme,                ONLY : symvector
-  USE wavefunctions,        ONLY : evc
   USE wavefunctions_gpum,   ONLY : evc_d, using_evc, using_evc_d
   USE noncollin_module,     ONLY : npol, noncolin
   USE spin_orb,             ONLY : lspinorb
@@ -87,7 +86,7 @@ SUBROUTINE force_us_gpu( forcenl )
      npw = ngk (ik)
 
      IF ( nks > 1 ) THEN
-        CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+        CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
         CALL using_evc(1)
         IF ( nkb > 0 ) CALL using_vkb_d(1)
         IF ( nkb > 0 ) CALL init_us_2_gpu( npw, igk_k_d(1,ik), xk(1,ik), vkb_d )

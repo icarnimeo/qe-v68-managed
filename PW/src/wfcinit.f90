@@ -26,7 +26,7 @@ SUBROUTINE wfcinit()
                                    diropn, xmlfile, restart_dir
   USE buffers,              ONLY : open_buffer, close_buffer, get_buffer, save_buffer
   USE uspp,                 ONLY : nkb, vkb, using_vkb
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   USE wvfct,                ONLY : nbnd, current_k
   USE wannier_new,          ONLY : use_wannier
   USE pw_restart_new,       ONLY : read_collected_wfc
@@ -85,8 +85,8 @@ SUBROUTINE wfcinit()
      IF ( twfcollect_file ) THEN
         !
         DO ik = 1, nks
-           CALL read_collected_wfc ( dirname, ik, evc )
-           CALL save_buffer ( evc, nwordwfc, iunwfc, ik )
+           CALL read_collected_wfc ( dirname, ik, evc_d )
+           CALL save_buffer ( evc_d, nwordwfc, iunwfc, ik )
         END DO
         !
      ELSE IF ( exst_sum /= 0 ) THEN
@@ -109,7 +109,7 @@ SUBROUTINE wfcinit()
            INQUIRE (unit = iunwfc, opened = opnd_file)
            IF ( .NOT.opnd_file ) CALL diropn( iunwfc, 'wfc', 2*nwordwfc, exst )
            CALL using_evc(2)
-           CALL davcio ( evc, 2*nwordwfc, iunwfc, nks, -1 )
+           CALL davcio ( evc_d, 2*nwordwfc, iunwfc, nks, -1 )
            IF ( .NOT.opnd_file ) CLOSE ( UNIT=iunwfc, STATUS='keep' )
         END IF
      END IF
@@ -189,7 +189,7 @@ SUBROUTINE wfcinit()
      !
      IF ( nks > 1 .OR. (io_level > 1) .OR. lelfield ) CALL using_evc(0)
      IF ( nks > 1 .OR. (io_level > 1) .OR. lelfield ) &
-         CALL save_buffer ( evc, nwordwfc, iunwfc, ik )
+         CALL save_buffer ( evc_d, nwordwfc, iunwfc, ik )
      !
   END DO
   !
@@ -215,7 +215,7 @@ SUBROUTINE init_wfc ( ik )
   USE wvfct,                ONLY : nbnd, npwx, et
   USE uspp,                 ONLY : nkb, okvan
   USE noncollin_module,     ONLY : npol
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   USE random_numbers,       ONLY : randy
   USE mp_bands,             ONLY : intra_bgrp_comm, inter_bgrp_comm, &
                                    nbgrp, root_bgrp_id
@@ -321,7 +321,7 @@ SUBROUTINE init_wfc ( ik )
 
   ! when band parallelization is active, the first band group distributes
   ! the wfcs to the others making sure all bgrp have the same starting wfc
-  ! FIXME: maybe this should be done once evc are computed, not here?
+  ! FIXME: maybe this should be done once evc_d are computed, not here?
   !
   IF( nbgrp > 1 ) CALL mp_bcast( wfcatom, root_bgrp_id, inter_bgrp_comm )
   !
@@ -346,8 +346,8 @@ SUBROUTINE init_wfc ( ik )
   !
   IF ( xclib_dft_is('hybrid')  ) CALL stop_exx()
   CALL start_clock( 'wfcinit:wfcrot' ); !write(*,*) 'start wfcinit:wfcrot' ; FLUSH(6)
-  CALL rotate_wfc ( npwx, ngk(ik), n_starting_wfc, gstart, nbnd, wfcatom, npol, okvan, evc, etatom )
-  CALL using_evc(1)  ! rotate_wfc (..., evc, etatom) -> evc : out (not specified)
+  CALL rotate_wfc ( npwx, ngk(ik), n_starting_wfc, gstart, nbnd, wfcatom, npol, okvan, evc_d, etatom )
+  CALL using_evc(1)  ! rotate_wfc (..., evc_d, etatom) -> evc_d : out (not specified)
   CALL stop_clock( 'wfcinit:wfcrot' ); !write(*,*) 'stop wfcinit:wfcrot' ; FLUSH(6)
   !
   lelfield = lelfield_save

@@ -20,14 +20,14 @@
      SAVE
 
      !
-     COMPLEX(DP), ALLOCATABLE, TARGET :: &
-       evc(:,:)
-       !! wavefunctions in the PW basis set.  
-       !! noncolinear case: first index is a combined PW + spin index
-       !
-#if defined(__CUDA)
-       attributes(PINNED) :: evc
-#endif
+!     COMPLEX(DP), ALLOCATABLE, TARGET :: &
+!       evc_d(:,:)
+!       !! wavefunctions in the PW basis set.  
+!       !! noncolinear case: first index is a combined PW + spin index
+!       !
+!#if defined(__CUDA)
+!       attributes(PINNED) :: evc_d
+!#endif
      !
      COMPLEX(DP) , ALLOCATABLE, TARGET :: psic(:)
      !! additional memory for FFT
@@ -59,7 +59,7 @@
        IF( ALLOCATED( phi ) ) DEALLOCATE( phi )
        IF( ALLOCATED( psic_nc ) ) DEALLOCATE( psic_nc )
        IF( ALLOCATED( psic ) ) DEALLOCATE( psic )
-       IF( ALLOCATED( evc ) ) DEALLOCATE( evc )
+!      IF( ALLOCATED( evc_d ) ) DEALLOCATE( evc_d )
 #if defined (__CUDA)
        IF( ALLOCATED( c0_d ) ) DEALLOCATE( c0_d )
        IF( ALLOCATED( cm_d ) ) DEALLOCATE( cm_d )

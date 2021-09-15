@@ -171,7 +171,7 @@ SUBROUTINE c_phase
    USE lsda_mod,             ONLY : nspin
    USE klist,                ONLY : nelec, degauss, nks, xk, wk, igk_k, ngk
    USE wvfct,                ONLY : npwx, nbnd, wg
-   USE wavefunctions,        ONLY : evc
+   USE wavefunctions_gpum,        ONLY : evc_d
    USE bp,                   ONLY : gdir, nppstr, mapgm_global, pdl_tot
    USE becmod,               ONLY : calbec, bec_type, allocate_bec_type, &
                                     deallocate_bec_type
@@ -491,23 +491,23 @@ SUBROUTINE c_phase
                IF (kpar /= nppstr) THEN
                   npw1 = ngk(kpoint)
                   igk1(:) = igk_k(:,kpoint)
-                  CALL get_buffer(evc,nwordwfc,iunwfc,kpoint)
+                  CALL get_buffer(evc_d,nwordwfc,iunwfc,kpoint)
                   CALL using_evc(1)
                   if (okvan) then
                      CALL using_vkb(1)
                      CALL init_us_2(npw1,igk1,xk(1,kpoint),vkb)
-                     CALL calbec(npw1, vkb, evc, becp_bp)
+                     CALL calbec(npw1, vkb, evc_d, becp_bp)
                   endif
                ELSE
                   kstart = kpoint-nppstr+1
                   npw1 = ngk(kstart)
                   igk1(:) = igk_k(:,kstart)
-                  CALL get_buffer(evc,nwordwfc,iunwfc,kstart)
+                  CALL get_buffer(evc_d,nwordwfc,iunwfc,kstart)
                   CALL using_evc(1)
                   if (okvan) then
                      CALL using_vkb(1)
                      CALL init_us_2(npw1,igk1,xk(1,kstart),vkb)
-                     CALL calbec(npw1, vkb, evc, becp_bp)
+                     CALL calbec(npw1, vkb, evc_d, becp_bp)
                   endif
                ENDIF
 
@@ -576,20 +576,20 @@ SUBROUTINE c_phase
                      aux(:) = (0.d0, 0.d0)
                      IF (kpar /= nppstr) THEN
                         DO ig=1,npw1
-                           aux(igk1(ig))=evc(ig,mb)
+                           aux(igk1(ig))=evc_d(ig,mb)
                         ENDDO
                         IF (noncolin) THEN
                            DO ig=1,npw1
-                              aux(igk1(ig)+ngm)=evc(ig+npwx,mb)
+                              aux(igk1(ig)+ngm)=evc_d(ig+npwx,mb)
                            ENDDO
                         ENDIF
                      ELSEIF (.NOT. l_para) THEN
                         DO ig=1,npw1
-                           aux(map_g(ig))=evc(ig,mb)
+                           aux(map_g(ig))=evc_d(ig,mb)
                         ENDDO
                         IF (noncolin) THEN
                            DO ig=1,npw1
-                              aux(map_g(ig)+ngm)=evc(ig+npwx,mb)
+                              aux(map_g(ig)+ngm)=evc_d(ig+npwx,mb)
                            ENDDO
                         ENDIF
                      ELSE
@@ -599,12 +599,12 @@ SUBROUTINE c_phase
                         aux_g=(0.d0,0.d0)
                         DO ig=1,npw1
                            aux_g(mapgm_global(ig_l2g(igk1(ig)),gdir)) &
-                                                =evc(ig,mb)
+                                                =evc_d(ig,mb)
                         ENDDO
                         IF (noncolin) THEN
                            DO ig=1,npw1
                               aux_g(mapgm_global(ig_l2g(igk1(ig)),gdir) &
-                                                + ngm_g) =evc(ig+npwx,mb)
+                                                + ngm_g) =evc_d(ig+npwx,mb)
                            ENDDO
                         ENDIF
                         CALL mp_sum(aux_g(:), intra_bgrp_comm )

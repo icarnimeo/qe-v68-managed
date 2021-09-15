@@ -29,7 +29,7 @@ SUBROUTINE new_nsg()
   USE symm_base,            ONLY : nsym, irt
   USE wvfct,                ONLY : nbnd, npw, npwx, wg
   USE control_flags,        ONLY : gamma_only
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   USE io_files,             ONLY : nwordwfc, iunwfc, nwordwfcU, iunsat, iunhub
   USE buffers,              ONLY : get_buffer
   USE mp_global,            ONLY : inter_pool_comm
@@ -79,7 +79,7 @@ SUBROUTINE new_nsg()
      !
      npw = ngk(ik)
      !
-     IF (nks > 1) CALL get_buffer (evc, nwordwfc, iunwfc, ik)
+     IF (nks > 1) CALL get_buffer (evc_d, nwordwfc, iunwfc, ik)
      IF (nks > 1) CALL using_evc(2)
      !
      ! make the projection
@@ -89,7 +89,7 @@ SUBROUTINE new_nsg()
         !CALL compute_pproj( ik, q_ae, proj )
      ELSE
         IF (nks > 1) CALL get_buffer (wfcU, nwordwfcU, iunhub, ik)
-        CALL calbec ( npw, wfcU, evc, proj )
+        CALL calbec ( npw, wfcU, evc_d, proj )
      END IF
      !
      ! compute the phase factors for this k and put the result 

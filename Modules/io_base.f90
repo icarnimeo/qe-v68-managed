@@ -148,7 +148,7 @@ MODULE io_base
       IF ( ionode_in_group) THEN 
          CALL qeh5_set_space ( evc_dset, wtmp(1), 2, [npol*igwx, nbnd], MODE = 'f')
          CALL qeh5_set_space ( evc_dset, wtmp(1), 1, [npol*igwx], MODE = 'm')
-         CALL qeh5_open_dataset (h5file, evc_dset, ACTION = 'write', NAME = 'evc' )       
+         CALL qeh5_open_dataset (h5file, evc_dset, ACTION = 'write', NAME = 'evc_d' )       
          CALL qeh5_add_attribute( evc_dset%id, "doc:","Wave Functions, (npwx,nbnd), &
                                each contiguous line represents a wave function,  &
                                each complex coefficient is given by a couple of contiguous floats") 
@@ -336,7 +336,7 @@ MODULE io_base
          ALLOCATE( wtmp( npol*MAX( igwx_, igwx ) ) )
          IF ( npol == 2 ) wtmp2 => wtmp(igwx_+1:2*igwx_)
 #if defined (__HDF5) 
-         CALL qeh5_open_dataset( h5file, h5dset_wfc, ACTION = 'read', NAME = 'evc')
+         CALL qeh5_open_dataset( h5file, h5dset_wfc, ACTION = 'read', NAME = 'evc_d')
          CALL qeh5_set_space ( h5dset_wfc, wtmp(1), RANK = 1, DIMENSIONS = [npol*igwx_], MODE = 'm') 
 #endif
       ELSE

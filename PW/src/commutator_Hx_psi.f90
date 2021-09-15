@@ -15,13 +15,13 @@ subroutine commutator_Hx_psi (ik, nbnd_calc, vpol, becp1, becp2, dpsi)
   ! For crystal coordinate, use vpol = at(:, ipol).
   ! For Cartesian coordinate, use vpol = (1.0, 0.0, 0.0) or other permutations.
   !
-  ! vkb and evc must be properly set for the appropriate k-point
-  ! in addition becp1 must be set equal to becp1 = <vkb|evc>
+  ! vkb and evc_d must be properly set for the appropriate k-point
+  ! in addition becp1 must be set equal to becp1 = <vkb|evc_d>
   ! as it is done in PH/phq_init.f90 for the k-point ik
   ! NB: here the last index of becp1 is missing, hence it refers
   !     to a single k-point
   !
-  !    CALL calbec (npw, vkb, evc, becp1(:,:) )
+  !    CALL calbec (npw, vkb, evc_d, becp1(:,:) )
   !
   USE kinds,           ONLY : DP
   USE cell_base,       ONLY : tpiba, at
@@ -30,7 +30,7 @@ subroutine commutator_Hx_psi (ik, nbnd_calc, vpol, becp1, becp2, dpsi)
   USE klist,           ONLY : xk, igk_k, ngk
   USE gvect,           ONLY : g
   USE wvfct,           ONLY : npwx, nbnd, et
-  USE wavefunctions,   ONLY : evc
+  USE wavefunctions_gpum,   ONLY : evc_d
   USE lsda_mod,        ONLY : nspin
   USE noncollin_module,ONLY : noncolin, npol
   USE becmod,          ONLY : becp, bec_type, calbec
@@ -77,11 +77,11 @@ subroutine commutator_Hx_psi (ik, nbnd_calc, vpol, becp1, becp2, dpsi)
   !
   do ibnd = 1, nbnd_calc
      do ig = 1, npw
-        dpsi(ig,ibnd) = gk_vpol(ig)*(0.d0,-2.d0)*evc (ig,ibnd)
+        dpsi(ig,ibnd) = gk_vpol(ig)*(0.d0,-2.d0)*evc_d (ig,ibnd)
      enddo
      IF (noncolin) THEN
         do ig = 1, npw
-           dpsi (ig+npwx, ibnd) = gk_vpol(ig)*(0.d0,-2.d0)*evc (ig+npwx, ibnd)
+           dpsi (ig+npwx, ibnd) = gk_vpol(ig)*(0.d0,-2.d0)*evc_d (ig+npwx, ibnd)
         end do
      END IF
   enddo
@@ -137,7 +137,7 @@ subroutine commutator_Hx_psi (ik, nbnd_calc, vpol, becp1, becp2, dpsi)
   ! calbec otherwise we would be stuck with the wrong component
   ! of becp2 later on.
   IF (gamma_only) work=(0.0_DP,1.0_DP)*work
-  CALL calbec (npw, work, evc, becp2)
+  CALL calbec (npw, work, evc_d, becp2)
 
   IF (noncolin) THEN
      allocate (psc ( nkb, npol, nbnd, 2))

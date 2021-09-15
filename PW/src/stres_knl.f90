@@ -23,7 +23,7 @@ SUBROUTINE stres_knl( sigmanlc, sigmakin )
   USE wvfct,                ONLY: npwx, nbnd, wg
   USE control_flags,        ONLY: gamma_only
   USE noncollin_module,     ONLY: noncolin, npol
-  USE wavefunctions,        ONLY: evc
+  USE wavefunctions_gpum,        ONLY: evc_d
   USE mp_pools,             ONLY: inter_pool_comm
   USE mp_bands,             ONLY: intra_bgrp_comm
   USE mp,                   ONLY: mp_sum
@@ -53,7 +53,7 @@ SUBROUTINE stres_knl( sigmanlc, sigmakin )
   kfac(:) = 1.d0
   !
   DO ik = 1, nks
-     IF ( nks > 1 ) CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+     IF ( nks > 1 ) CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
      if ( nks > 1 ) CALL using_evc(2)
      npw = ngk(ik)
      DO i = 1, npw
@@ -76,12 +76,12 @@ SUBROUTINE stres_knl( sigmanlc, sigmakin )
                  IF (noncolin) THEN
                     sigmakin(l,m) = sigmakin(l,m) + wg(ibnd,ik) * &
                      gk(i,l) * gk(i, m) * kfac(i) * &
-                     ( DBLE (CONJG(evc(   i  ,ibnd))*evc(   i  ,ibnd)) + &
-                       DBLE (CONJG(evc(i+npwx,ibnd))*evc(i+npwx,ibnd)))
+                     ( DBLE (CONJG(evc_d(   i  ,ibnd))*evc_d(   i  ,ibnd)) + &
+                       DBLE (CONJG(evc_d(i+npwx,ibnd))*evc_d(i+npwx,ibnd)))
                  ELSE
                     sigmakin(l,m) = sigmakin(l,m) + wg(ibnd,ik) * &
                         gk(i,l) * gk(i, m) * kfac(i) * &
-                          DBLE (CONJG(evc(i, ibnd) ) * evc(i, ibnd) )
+                          DBLE (CONJG(evc_d(i, ibnd) ) * evc_d(i, ibnd) )
                  ENDIF
               ENDDO
            ENDDO

@@ -81,18 +81,17 @@ MODULE exx_band
   !-----------------------------------------------------------------------
   SUBROUTINE transform_evc_to_exx( type )
     !-----------------------------------------------------------------------
-    !! Transform evc to the EXX data structure.
+    !! Transform evc_d to the EXX data structure.
     !
     USE wvfct,                ONLY : npwx, nbnd
     USE io_files,             ONLY : nwordwfc, iunwfc, iunwfc_exx
     USE klist,                ONLY : nks, ngk, igk_k
     USE uspp,                 ONLY : nkb, vkb
-    USE wavefunctions,        ONLY : evc
     USE control_flags,        ONLY : io_level
     USE buffers,              ONLY : open_buffer, get_buffer, save_buffer
     USE mp_exx,               ONLY : max_ibands, negrp
 
-    USE wavefunctions_gpum, ONLY : using_evc
+    USE wavefunctions_gpum, ONLY : using_evc, evc_d
     !
     IMPLICIT NONE
     !
@@ -112,7 +111,7 @@ MODULE exx_band
        IF(.not.allocated(evc_exx))THEN
           ALLOCATE(evc_exx(npwx*npol,nbnd))
        END IF
-       evc_exx = evc
+       evc_exx = evc_d
        !
        ! get igk_exx
        !
@@ -134,7 +133,7 @@ MODULE exx_band
        !
     END IF
     !
-    ! change the data structure of evc and igk
+    ! change the data structure of evc_d and igk
     !
     lda = npwx
     n = npwx
@@ -175,16 +174,16 @@ MODULE exx_band
     !
     DO ik=1, nks
        !
-       ! read evc for the local data structure
+       ! read evc_d for the local data structure
        !
-       IF ( nks > 1 ) CALL get_buffer(evc, nwordwfc, iunwfc, ik)
+       IF ( nks > 1 ) CALL get_buffer(evc_d, nwordwfc, iunwfc, ik)
        IF ( nks > 1 ) CALL using_evc(2)
        !
-       ! transform evc to the EXX data structure
+       ! transform evc_d to the EXX data structure
        !
-       CALL transform_to_exx(lda, n, nbnd, nbnd, ik, evc, evc_exx, type)
+       CALL transform_to_exx(lda, n, nbnd, nbnd, ik, evc_d, evc_exx, type)
        !
-       ! save evc to a buffer
+       ! save evc_d to a buffer
        !
        IF ( nks > 1 ) CALL save_buffer ( evc_exx, nwordwfc_exx, iunwfc_exx, ik )
     END DO
@@ -798,7 +797,7 @@ MODULE exx_band
                  MPI_DOUBLE_COMPLEX, &
                  iproc, 100+me_egrp*nproc_egrp+iproc, &
                  intra_egrp_comm, request_recv(iproc+1), ierr )
-         ELSE IF (type.eq.1) THEN !evc
+         ELSE IF (type.eq.1) THEN !evc_d
             CALL MPI_IRECV( comm_recv(iproc+1,current_ik)%msg, &
                  comm_recv(iproc+1,current_ik)%size*npol*m, MPI_DOUBLE_COMPLEX, &
                  iproc, 100+me_egrp*nproc_egrp+iproc, &
@@ -840,7 +839,7 @@ MODULE exx_band
                    comm_send(iproc+1,current_ik)%msg(i,ipol,im) = &
                         psi_work(ig,ipol,ibands(im,my_egrp_id+1),1+(j-1)/nproc_egrp)
                 END DO
-             ELSE IF (type.eq.1) THEN !evc
+             ELSE IF (type.eq.1) THEN !evc_d
                 DO im=1, m
                    comm_send(iproc+1,current_ik)%msg(i,ipol,im) = &
                         psi_work(ig,ipol,im,1+(j-1)/nproc_egrp)
@@ -866,7 +865,7 @@ MODULE exx_band
                   MPI_DOUBLE_COMPLEX, &
                   iproc, 100+iproc*nproc_egrp+me_egrp, &
                   intra_egrp_comm, request_send(iproc+1), ierr )
-          ELSE IF (type.eq.1) THEN !evc
+          ELSE IF (type.eq.1) THEN !evc_d
              CALL MPI_ISEND( comm_send(iproc+1,current_ik)%msg, &
                   comm_send(iproc+1,current_ik)%size*npol*m, MPI_DOUBLE_COMPLEX, &
                   iproc, 100+iproc*nproc_egrp+me_egrp, &
@@ -910,7 +909,7 @@ MODULE exx_band
                            comm_recv(iproc+1,current_ik)%msg(i,ipol,im)
                    END DO
                 END DO
-             ELSE IF (type.eq.1) THEN !evc
+             ELSE IF (type.eq.1) THEN !evc_d
                 DO im=1, m
                    DO ipol=1, npol
                       psi_out(ig+npwx_exx*(ipol-1),im) = &

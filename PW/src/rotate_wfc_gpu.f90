@@ -14,7 +14,7 @@ SUBROUTINE rotate_wfc_gpu &
   ! ... Driver routine (maybe it should be an interface) for
   ! ... Hamiltonian diagonalization in the subspace spanned
   ! ... by nstart states psi ( atomic or random wavefunctions ).
-  ! ... Produces on output nbnd eigenvectors ( nbnd <= nstart ) in evc.
+  ! ... Produces on output nbnd eigenvectors ( nbnd <= nstart ) in evc_d.
   ! ... Calls h_psi, s_psi to calculate H|psi> ans S|psi>
   ! ... It only uses an auxiliary array of the same size as psi.
   !

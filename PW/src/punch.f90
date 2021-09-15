@@ -37,7 +37,7 @@ SUBROUTINE punch( what )
   USE qexsd_module,         ONLY : qexsd_reset_steps
   USE io_rho_xml,           ONLY : write_scf
   USE a2F,                  ONLY : la2F, a2Fsave
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   USE xdm_module,           ONLY : write_xdmdat
   !
   USE wavefunctions_gpum,   ONLY : using_evc
@@ -121,7 +121,7 @@ SUBROUTINE punch( what )
      !
      IF (io_level < 1) CALL diropn( iunwfc, 'wfc', 2*nwordwfc, exst )
      CALL using_evc(0)
-     CALL davcio ( evc, 2*nwordwfc, iunwfc, nks, 1 )
+     CALL davcio ( evc_d, 2*nwordwfc, iunwfc, nks, 1 )
      IF (io_level < 1) CLOSE ( UNIT=iunwfc, STATUS='keep' )
      CALL infomsg('punch','wavefunctions written to file')
      !

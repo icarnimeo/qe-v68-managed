@@ -171,7 +171,7 @@ SUBROUTINE print_clock_pw()
          CALL print_clock( 'rotHSw:move' )
          CALL print_clock( 'rotHSw:hc' )
          CALL print_clock( 'rotHSw:diag' )
-         CALL print_clock( 'rotHSw:evc' )
+         CALL print_clock( 'rotHSw:evc_d' )
          CALL print_clock( 'rotHSw:hc:b0' ) ; 
          CALL print_clock( 'rotHSw:hc:s1' ) ; call print_clock('rotHSw:hc:comp')
          CALL print_clock( 'rotHSw:hc:b1' ) ; 

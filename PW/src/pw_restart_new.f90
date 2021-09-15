@@ -748,7 +748,7 @@ MODULE pw_restart_new
       USE gvect,                ONLY : ig_l2g
       USE noncollin_module,     ONLY : noncolin, npol
       USE buffers,              ONLY : get_buffer
-      USE wavefunctions, ONLY : evc
+      USE wavefunctions_gpum, ONLY : evc_d
       USE klist,                ONLY : nks, nkstot, xk, ngk, igk_k
       USE gvect,                ONLY : ngm, g, mill
       USE fft_base,             ONLY : dfftp
@@ -840,7 +840,7 @@ MODULE pw_restart_new
          ! ... read wavefunctions - do not read if already in memory (nsk==1)
          !
          IF ( nks > 1 ) CALL using_evc(2)
-         IF ( nks > 1 ) CALL get_buffer ( evc, nwordwfc, iunwfc, ik )
+         IF ( nks > 1 ) CALL get_buffer ( evc_d, nwordwfc, iunwfc, ik )
          !
          IF ( nspin == 2 ) THEN
             !
@@ -864,7 +864,7 @@ MODULE pw_restart_new
          IF ( my_bgrp_id == root_bgrp_id ) CALL using_evc(0)
          IF ( my_bgrp_id == root_bgrp_id ) CALL write_wfc( iunpun, &
               filename, root_bgrp, intra_bgrp_comm, ik_g, tpiba*xk(:,ik), &
-              ispin, nspin, evc, npw_g, gamma_only, nbnd, &
+              ispin, nspin, evc_d, npw_g, gamma_only, nbnd, &
               igk_l2g_kdip(:), ngk(ik), tpiba*bg(:,1), tpiba*bg(:,2), &
               tpiba*bg(:,3), mill_k, 1.D0 )
          !
@@ -1203,11 +1203,11 @@ MODULE pw_restart_new
     END SUBROUTINE read_xml_file
     !
     !------------------------------------------------------------------------
-    SUBROUTINE read_collected_wfc ( dirname, ik, evc )
+    SUBROUTINE read_collected_wfc ( dirname, ik, evc_d )
       !------------------------------------------------------------------------
       !
       ! ... reads from directory "dirname" (new file format) for k-point "ik"
-      ! ... wavefunctions from collected format into distributed array "evc"
+      ! ... wavefunctions from collected format into distributed array "evc_d"
       !
       USE control_flags,        ONLY : gamma_only
       USE lsda_mod,             ONLY : nspin, isk
@@ -1225,7 +1225,7 @@ MODULE pw_restart_new
       !
       CHARACTER(LEN=*), INTENT(IN) :: dirname
       INTEGER, INTENT(IN) :: ik
-      COMPLEX(dp), INTENT(OUT) :: evc(:,:)
+      COMPLEX(dp), INTENT(OUT) :: evc_d(:,:)
       !
       CHARACTER(LEN=2), DIMENSION(2) :: updw = (/ 'up', 'dw' /)
       CHARACTER(LEN=320)   :: filename, msg
@@ -1297,10 +1297,10 @@ MODULE pw_restart_new
       !
       ALLOCATE( mill_k ( 3,npwx ) )
       !
-      evc=(0.0_DP, 0.0_DP)
+      evc_d=(0.0_DP, 0.0_DP)
       !
       CALL read_wfc( iunpun, filename, root_bgrp, intra_bgrp_comm, &
-           ik_g, xk_, ispin, npol_, evc, npw_g, gamma_only, nbnd_, &
+           ik_g, xk_, ispin, npol_, evc_d, npw_g, gamma_only, nbnd_, &
            igk_l2g_kdip(:), ngk(ik), b1, b2, b3, mill_k, scalef )
       !
       DEALLOCATE ( mill_k )

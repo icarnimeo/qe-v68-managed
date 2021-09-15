@@ -22,7 +22,6 @@ SUBROUTINE compute_becsum( iflag )
   USE scf,                  ONLY : rho
   USE uspp,                 ONLY : nkb, vkb, becsum, becsum_d, okvan, using_vkb
   USE uspp_param,           ONLY : nhm
-  USE wavefunctions,        ONLY : evc
   USE wvfct,                ONLY : nbnd, npwx, wg
   USE mp_pools,             ONLY : inter_pool_comm
   USE mp_bands,             ONLY : intra_bgrp_comm, inter_bgrp_comm 
@@ -31,7 +30,7 @@ SUBROUTINE compute_becsum( iflag )
   USE paw_variables,        ONLY : okpaw
   USE becmod,               ONLY : allocate_bec_type, deallocate_bec_type, &
                                    bec_type, becp
-  USE wavefunctions_gpum,   ONLY : using_evc
+  USE wavefunctions_gpum,   ONLY : using_evc, evc_d
   USE becmod_subs_gpum,     ONLY : using_becp_auto
   !
   IMPLICIT NONE
@@ -60,7 +59,7 @@ SUBROUTINE compute_becsum( iflag )
   k_loop: DO ik = 1, nks
      !
      IF ( lsda ) current_spin = isk(ik)
-     IF ( nks > 1 ) CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+     IF ( nks > 1 ) CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
      IF ( nks > 1 ) CALL using_evc(2)
      !
      IF ( nkb > 0 ) CALL using_vkb(2)

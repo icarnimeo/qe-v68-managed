@@ -334,7 +334,7 @@ MODULE exx
     !! This subroutine is run before the first H_psi() of each iteration. 
     !! It saves the wavefunctions for the right density matrix, in real space.
     !
-    USE wavefunctions,        ONLY : evc
+    USE wavefunctions_gpum,        ONLY : evc_d
     USE io_files,             ONLY : nwordwfc, iunwfc_exx
     USE buffers,              ONLY : get_buffer
     USE wvfct,                ONLY : nbnd, npwx, wg, current_k
@@ -2675,7 +2675,6 @@ end associate
     USE buffers,                ONLY : get_buffer
     USE wvfct,                  ONLY : nbnd, npwx, wg, current_k
     USE gvect,                  ONLY : gstart
-    USE wavefunctions,          ONLY : evc
     USE lsda_mod,               ONLY : lsda, current_spin, isk
     USE klist,                  ONLY : ngk, nks, xk
     USE mp_pools,               ONLY : inter_pool_comm
@@ -2686,7 +2685,7 @@ end associate
                                        deallocate_bec_type, calbec
     USE uspp,                   ONLY : okvan,nkb,vkb, using_vkb
     USE exx_band,               ONLY : nwordwfc_exx, igk_exx
-    USE wavefunctions_gpum,     ONLY : using_evc
+    USE wavefunctions_gpum,     ONLY : using_evc, evc_d
     IMPLICIT NONE
     !
     TYPE(bec_type) :: becpsi
@@ -2712,7 +2711,7 @@ end associate
        IF ( nks > 1 ) THEN
           CALL get_buffer( psi, nwordwfc_exx, iunwfc_exx, ik )
        ELSE
-          psi(1:npwx*npol,1:nbnd) = evc(1:npwx*npol,1:nbnd)
+          psi(1:npwx*npol,1:nbnd) = evc_d(1:npwx*npol,1:nbnd)
        ENDIF
        !
        IF (okvan) THEN
@@ -2786,7 +2785,7 @@ end associate
     USE symm_base,               ONLY : nsym, s
     USE gvect,                   ONLY : ngm, gstart, g
     USE wvfct,                   ONLY : nbnd, npwx, wg
-    USE wavefunctions,           ONLY : evc
+    USE wavefunctions_gpum,           ONLY : evc_d
     USE klist,                   ONLY : xk, ngk, nks, nkstot
     USE lsda_mod,                ONLY : lsda, current_spin, isk
     USE mp_pools,                ONLY : inter_pool_comm
@@ -3098,7 +3097,7 @@ end associate
     USE symm_base,               ONLY : nsym, s
     USE gvect,                   ONLY : ngm, gstart, g
     USE wvfct,                   ONLY : nbnd, npwx, wg
-    USE wavefunctions,           ONLY : evc
+    USE wavefunctions_gpum,           ONLY : evc_d
     USE klist,                   ONLY : xk, ngk, nks, nkstot
     USE lsda_mod,                ONLY : lsda, current_spin, isk
     USE mp_pools,                ONLY : inter_pool_comm
@@ -3417,7 +3416,7 @@ end associate
     USE cell_base,            ONLY : alat, omega, bg, at, tpiba
     USE symm_base,            ONLY : nsym, s
     USE wvfct,                ONLY : nbnd, npwx, wg, current_k
-    USE wavefunctions,        ONLY : evc
+    USE wavefunctions_gpum,        ONLY : evc_d
     USE klist,                ONLY : xk, ngk, nks
     USE lsda_mod,             ONLY : lsda, current_spin, isk
     USE gvect,                ONLY : g
@@ -3948,8 +3947,7 @@ end associate
     USE mp_pools,           ONLY : inter_pool_comm
     USE mp_bands,           ONLY : intra_bgrp_comm
     USE mp,                 ONLY : mp_sum
-    USE wavefunctions,      ONLY : evc
-    USE wavefunctions_gpum, ONLY : using_evc
+    USE wavefunctions_gpum, ONLY : using_evc, evc_d
     !
     IMPLICIT NONE
     !
@@ -3982,17 +3980,17 @@ end associate
        npw = ngk(ik)
        current_k = ik
        IF ( lsda ) current_spin = isk(ik)
-       IF ( nks > 1 ) CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+       IF ( nks > 1 ) CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
        IF ( nks > 1 ) CALL using_evc(2)
        IF ( okvan ) THEN
           CALL using_vkb(1)
           CALL init_us_2( npw, igk_k(1,ik), xk(:,ik), vkb )
-          CALL calbec( npw, vkb, evc, becpsi, nbnd )
+          CALL calbec( npw, vkb, evc_d, becpsi, nbnd )
        ENDIF
        IF (gamma_only) THEN
-          CALL aceinit_gamma( DoLoc, npw, nbnd, evc, xi(1,1,ik), becpsi, ee )
+          CALL aceinit_gamma( DoLoc, npw, nbnd, evc_d, xi(1,1,ik), becpsi, ee )
        ELSE
-          CALL aceinit_k( DoLoc, npw, nbnd, evc, xi(1,1,ik), becpsi, ee )
+          CALL aceinit_k( DoLoc, npw, nbnd, evc_d, xi(1,1,ik), becpsi, ee )
        ENDIF
        eexx = eexx + ee
     ENDDO

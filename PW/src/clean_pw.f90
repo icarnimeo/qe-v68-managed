@@ -36,7 +36,7 @@ SUBROUTINE clean_pw( lflag )
                                    vrs, kedtau, destroy_scf_type, vnew
   USE symm_base,            ONLY : irt
   USE symme,                ONLY : sym_rho_deallocate
-  USE wavefunctions,        ONLY : evc, psic, psic_nc
+  USE wavefunctions,        ONLY : psic, psic_nc
   USE uspp_data,            ONLY : qrad, tab, tab_at, tab_d2y, spline_ps
   USE uspp,                 ONLY : deallocate_uspp
   USE uspp_data,            ONLY : deallocate_uspp_data
@@ -68,7 +68,7 @@ SUBROUTINE clean_pw( lflag )
   USE libmbd_interface,     ONLY : clean_mbd
   USE dftd3_qe,             ONLY : dftd3_clean
   !
-  USE wavefunctions_gpum,   ONLY : deallocate_wavefunctions_gpu
+  USE wavefunctions_gpum,   ONLY : deallocate_wavefunctions_gpu, evc_d
   USE wvfct_gpum,           ONLY : deallocate_wvfct_gpu
   USE scf_gpum,             ONLY : deallocate_scf_gpu
   !
@@ -164,7 +164,7 @@ SUBROUTINE clean_pw( lflag )
   !
   ! ... arrays allocated in allocate_wfc.f90 ( and never deallocated )
   !
-  IF ( ALLOCATED( evc ) )        DEALLOCATE( evc )
+  IF ( ALLOCATED( evc_d ) )        DEALLOCATE( evc_d )
   IF ( ALLOCATED( swfcatom ) )   DEALLOCATE( swfcatom )
   !
   CALL deallocate_wavefunctions_gpu()

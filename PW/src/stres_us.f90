@@ -21,7 +21,7 @@ SUBROUTINE stres_us( ik, gk, sigmanlc )
   USE control_flags,        ONLY : gamma_only
   USE uspp_param,           ONLY : upf, lmaxkb, nh, nhm
   USE uspp,                 ONLY : nkb, vkb, deeq, deeq_nc, using_vkb
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   USE spin_orb,             ONLY : lspinorb
   USE lsda_mod,             ONLY : nspin
   USE noncollin_module,     ONLY : noncolin, npol
@@ -60,7 +60,7 @@ SUBROUTINE stres_us( ik, gk, sigmanlc )
   CALL allocate_bec_type ( nkb, nbnd, becp, intra_bgrp_comm ) 
   
   CALL using_vkb(0); CALL using_becp_auto(2)
-  CALL calbec( npw, vkb, evc, becp )
+  CALL calbec( npw, vkb, evc_d, becp )
   !
   ALLOCATE( qm1( npwx ) )
   DO i = 1, npw
@@ -213,7 +213,7 @@ SUBROUTINE stres_us( ik, gk, sigmanlc )
              DO ipol = 1, 3
                 DO jpol = 1, ipol
                    DO i = 1, npw
-                      work1(i) = evc(i,ibnd) * gk(i, ipol) * gk(i, jpol) * qm1(i)
+                      work1(i) = evc_d(i,ibnd) * gk(i, ipol) * gk(i, jpol) * qm1(i)
                    END DO
                    sigmanlc(ipol,jpol) = sigmanlc(ipol,jpol) - &
                         4.D0 * wg(ibnd,ik) * &
@@ -275,7 +275,7 @@ SUBROUTINE stres_us( ik, gk, sigmanlc )
                 !
                 DO jpol = 1, ipol
                    DO i = 1, npw
-                      work1(i) = evc(i,ibnd) * gk(i, jpol)
+                      work1(i) = evc_d(i,ibnd) * gk(i, jpol)
                    END DO
                    sigmanlc(ipol,jpol) = sigmanlc(ipol,jpol) - &
                         4.D0 * wg(ibnd,ik) * &
@@ -499,9 +499,9 @@ SUBROUTINE stres_us( ik, gk, sigmanlc )
              DO jpol = 1, ipol
                 IF (noncolin) THEN
                    DO i = 1, npw
-                      work1(i) = evc(   i  ,ibnd)*gk(i,ipol)* &
+                      work1(i) = evc_d(   i  ,ibnd)*gk(i,ipol)* &
                                                   gk(i,jpol)*qm1(i)
-                      work2(i) = evc(i+npwx,ibnd)*gk(i,ipol)* &
+                      work2(i) = evc_d(i+npwx,ibnd)*gk(i,ipol)* &
                                                   gk(i,jpol)*qm1(i)
                    END DO
                    sigmanlc(ipol,jpol) = sigmanlc(ipol,jpol) - &
@@ -510,7 +510,7 @@ SUBROUTINE stres_us( ik, gk, sigmanlc )
                                    ddot(2*npw,work2,1,work2_nc(1,2), 1) )
                 ELSE
                    DO i = 1, npw
-                      work1(i) = evc(i,ibnd)*gk(i, ipol)*gk(i, jpol)*qm1(i)
+                      work1(i) = evc_d(i,ibnd)*gk(i, ipol)*gk(i, jpol)*qm1(i)
                    END DO
                    sigmanlc(ipol,jpol) = sigmanlc(ipol,jpol) - &
                                          2.D0 * wg(ibnd,ik) * &
@@ -604,8 +604,8 @@ SUBROUTINE stres_us( ik, gk, sigmanlc )
              DO jpol = 1, ipol
                 IF (noncolin) THEN
                    DO i = 1, npw
-                      work1(i) = evc(i     ,ibnd) * gk(i, jpol)
-                      work2(i) = evc(i+npwx,ibnd) * gk(i, jpol)
+                      work1(i) = evc_d(i     ,ibnd) * gk(i, jpol)
+                      work2(i) = evc_d(i+npwx,ibnd) * gk(i, jpol)
                    END DO
                    sigmanlc(ipol,jpol) = sigmanlc(ipol,jpol) - &
                               2.D0 * wg(ibnd,ik) * & 
@@ -613,7 +613,7 @@ SUBROUTINE stres_us( ik, gk, sigmanlc )
                               ddot( 2 * npw, work2, 1, work2_nc(1,2), 1 ) )
                 ELSE
                    DO i = 1, npw
-                      work1(i) = evc(i,ibnd) * gk(i, jpol)
+                      work1(i) = evc_d(i,ibnd) * gk(i, jpol)
                    END DO
                    sigmanlc(ipol,jpol) = sigmanlc(ipol,jpol) - &
                                       2.D0 * wg(ibnd,ik) * & 

@@ -25,14 +25,13 @@ SUBROUTINE c_bands( iter )
   USE control_flags,        ONLY : ethr, isolve, restart, use_gpu, iverbosity
   USE ldaU,                 ONLY : lda_plus_u, lda_plus_u_kind, U_projection, wfcU
   USE lsda_mod,             ONLY : current_spin, lsda, isk
-  USE wavefunctions,        ONLY : evc
   USE bp,                   ONLY : lelfield
   USE mp_pools,             ONLY : npool, kunit, inter_pool_comm
   USE mp,                   ONLY : mp_sum
   USE check_stop,           ONLY : check_stop_now
   USE gcscf_module,         ONLY : lgcscf
 
-  USE wavefunctions_gpum,   ONLY : using_evc
+  USE wavefunctions_gpum,   ONLY : evc_d, using_evc
   USE wvfct_gpum,           ONLY : using_et
   !
   IMPLICIT NONE
@@ -64,7 +63,7 @@ SUBROUTINE c_bands( iter )
   !
   DO ik = 1, ik_
      IF ( nks > 1 .OR. lelfield ) &
-        CALL get_buffer ( evc, nwordwfc, iunwfc, ik )
+        CALL get_buffer ( evc_d, nwordwfc, iunwfc, ik )
      IF ( nks > 1 .OR. lelfield ) CALL using_evc(1)
   ENDDO
   !
@@ -113,7 +112,7 @@ SUBROUTINE c_bands( iter )
      ! ... read in wavefunctions from the previous iteration
      !
      IF ( nks > 1 .OR. lelfield ) &
-          CALL get_buffer ( evc, nwordwfc, iunwfc, ik )
+          CALL get_buffer ( evc_d, nwordwfc, iunwfc, ik )
      IF ( nks > 1 .OR. lelfield ) CALL using_evc(2)
      !
      ! ... Needed for LDA+U
@@ -131,7 +130,7 @@ SUBROUTINE c_bands( iter )
      !
      CALL using_evc(0)
      IF ( nks > 1 .OR. lelfield ) &
-          CALL save_buffer ( evc, nwordwfc, iunwfc, ik )
+          CALL save_buffer ( evc_d, nwordwfc, iunwfc, ik )
      !
      ! ... beware: with pools, if the number of k-points on different
      ! ... pools differs, make sure that all processors are still in
@@ -191,7 +190,6 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
   USE control_flags,        ONLY : ethr, lscf, max_cg_iter, max_ppcg_iter, isolve, &
                                    gamma_only, use_para_diag, use_gpu
   USE noncollin_module,     ONLY : npol
-  USE wavefunctions,        ONLY : evc
   USE g_psi_mod,            ONLY : h_diag, s_diag
   USE g_psi_mod_gpum,       ONLY : h_diag_d, s_diag_d, using_h_diag, using_s_diag, using_h_diag_d, using_s_diag_d
   USE scf,                  ONLY : v_of_0
@@ -354,7 +352,7 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
                 !
                 IF (.not. use_gpu) THEN
                    CALL using_evc(1);  CALL using_et(1); ! et is used as intent(out), set intento=2?
-                   CALL rotate_wfc( npwx, npw, nbnd, gstart, nbnd, evc, npol, okvan, evc, et(1,ik) )
+                   CALL rotate_wfc( npwx, npw, nbnd, gstart, nbnd, evc_d, npol, okvan, evc_d, et(1,ik) )
                 ELSE
                    CALL using_evc_d(1);  CALL using_et_d(1); ! et is used as intent(out), set intento=2?
                    CALL rotate_wfc_gpu( npwx, npw, nbnd, gstart, nbnd, evc_d, npol, okvan, evc_d, et_d(1,ik) )
@@ -369,7 +367,7 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
              IF (.not. use_gpu) THEN
                 CALL using_evc(1);  CALL using_et(1); CALL using_h_diag(0) ! precontidtion has intent(in)
                 CALL rcgdiagg( hs_1psi, s_1psi, h_diag, &
-                         npwx, npw, nbnd, evc, et(1,ik), btype(1,ik), &
+                         npwx, npw, nbnd, evc_d, et(1,ik), btype(1,ik), &
                          ethr, max_cg_iter, .NOT. lscf, notconv, cg_iter )
              ELSE
                 CALL using_evc_d(1);  CALL using_et_d(1); CALL using_h_diag_d(0) ! precontidtion has intent(in)
@@ -385,7 +383,7 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
              IF (.not. use_gpu) THEN
                CALL using_evc(1);  CALL using_et(1); CALL using_h_diag(0) ! precontidtion has intent(in)
                CALL ppcg_gamma( h_psi, s_psi, okvan, h_diag, &
-                           npwx, npw, nbnd, evc, et(1,ik), btype(1,ik), &
+                           npwx, npw, nbnd, evc_d, et(1,ik), btype(1,ik), &
                            0.1d0*ethr, max_ppcg_iter, notconv, ppcg_iter, sbsize , rrstep, iter )
                !
                avg_iter = avg_iter + ppcg_iter
@@ -404,7 +402,7 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
              IF (.not. use_gpu ) THEN
                CALL using_evc(1);  CALL using_et(1); CALL using_h_diag(0) ! precontidtion has intent(in)
                CALL paro_gamma_new( h_psi, s_psi, hs_psi, g_1psi, okvan, &
-                          npwx, npw, nbnd, evc, et(1,ik), btype(1,ik), ethr, notconv, nhpsi )
+                          npwx, npw, nbnd, evc_d, et(1,ik), btype(1,ik), ethr, notconv, nhpsi )
                !
                avg_iter = avg_iter + nhpsi/float(nbnd) 
                ! write (6,*) ntry, avg_iter, nhpsi
@@ -469,11 +467,11 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
              IF ( use_para_diag ) THEN
 !                ! make sure that all processors have the same wfc
                 CALL pregterg( h_psi, s_psi, okvan, g_psi, &
-                            npw, npwx, nbnd, nbndx, evc, ethr, &
+                            npw, npwx, nbnd, nbndx, evc_d, ethr, &
                             et(1,ik), btype(1,ik), notconv, lrot, dav_iter, nhpsi ) !    BEWARE gstart has been removed from call
              ELSE
                 CALL regterg (  h_psi, s_psi, okvan, g_psi, &
-                         npw, npwx, nbnd, nbndx, evc, ethr, &
+                         npw, npwx, nbnd, nbndx, evc_d, ethr, &
                          et(1,ik), btype(1,ik), notconv, lrot, dav_iter, nhpsi ) !    BEWARE gstart has been removed from call
              END IF
              ! CALL using_evc(1) done above
@@ -530,7 +528,7 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
        ! ... save wave functions from previous iteration for electric field
        !
        CALL using_evc(0)
-       evcel = evc
+       evcel = evc_d
        !
        !... read projectors from disk
        !
@@ -591,7 +589,7 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
                 !
                 IF ( .not. use_gpu ) THEN
                    CALL using_evc(1); CALL using_et(1);
-                   CALL rotate_wfc( npwx, npw, nbnd, gstart, nbnd, evc, npol, okvan, evc, et(1,ik) )
+                   CALL rotate_wfc( npwx, npw, nbnd, gstart, nbnd, evc_d, npol, okvan, evc_d, et(1,ik) )
                 ELSE
                    CALL using_evc_d(1); CALL using_et_d(1);
                    CALL rotate_wfc_gpu( npwx, npw, nbnd, gstart, nbnd, evc_d, npol, okvan, evc_d, et_d(1,ik) )
@@ -605,7 +603,7 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
              IF ( .not. use_gpu ) THEN
                 CALL using_evc(1); CALL using_et(1); CALL using_h_diag(0)
                 CALL ccgdiagg( hs_1psi, s_1psi, h_diag, &
-                         npwx, npw, nbnd, npol, evc, et(1,ik), btype(1,ik), &
+                         npwx, npw, nbnd, npol, evc_d, et(1,ik), btype(1,ik), &
                          ethr, max_cg_iter, .NOT. lscf, notconv, cg_iter )
              ELSE
                 CALL using_evc_d(1); CALL using_et_d(1); CALL using_h_diag_d(0)
@@ -621,7 +619,7 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
                CALL using_evc(1); CALL using_et(1); CALL using_h_diag(0)
                ! BEWARE npol should be added to the arguments
                CALL ppcg_k( h_psi, s_psi, okvan, h_diag, &
-                           npwx, npw, nbnd, npol, evc, et(1,ik), btype(1,ik), &
+                           npwx, npw, nbnd, npol, evc_d, et(1,ik), btype(1,ik), &
                            0.1d0*ethr, max_ppcg_iter, notconv, ppcg_iter, sbsize , rrstep, iter )
                !
                avg_iter = avg_iter + ppcg_iter
@@ -641,7 +639,7 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
              IF ( .not. use_gpu ) THEN
                CALL using_evc(1); CALL using_et(1); CALL using_h_diag(0)
                CALL paro_k_new( h_psi, s_psi, hs_psi, g_1psi, okvan, &
-                        npwx, npw, nbnd, npol, evc, et(1,ik), btype(1,ik), ethr, notconv, nhpsi )
+                        npwx, npw, nbnd, npol, evc_d, et(1,ik), btype(1,ik), ethr, notconv, nhpsi )
                !
                avg_iter = avg_iter + nhpsi/float(nbnd) 
                ! write (6,*) ntry, avg_iter, nhpsi
@@ -711,13 +709,13 @@ SUBROUTINE diag_bands( iter, ik, avg_iter )
              IF ( use_para_diag ) then
                 !
                 CALL pcegterg( h_psi, s_psi, okvan, g_psi, &
-                               npw, npwx, nbnd, nbndx, npol, evc, ethr, &
+                               npw, npwx, nbnd, nbndx, npol, evc_d, ethr, &
                                et(1,ik), btype(1,ik), notconv, lrot, dav_iter, nhpsi )
                 !
              ELSE
                 !
                 CALL cegterg ( h_psi, s_psi, okvan, g_psi, &
-                               npw, npwx, nbnd, nbndx, npol, evc, ethr, &
+                               npw, npwx, nbnd, nbndx, npol, evc_d, ethr, &
                                et(1,ik), btype(1,ik), notconv, lrot, dav_iter, nhpsi )
              END IF
           ELSE
@@ -869,11 +867,10 @@ SUBROUTINE c_bands_nscf( )
   USE control_flags,        ONLY : ethr, restart, isolve, io_level, iverbosity, use_gpu
   USE ldaU,                 ONLY : lda_plus_u, lda_plus_u_kind, U_projection, wfcU
   USE lsda_mod,             ONLY : current_spin, lsda, isk
-  USE wavefunctions,        ONLY : evc
   USE mp_pools,             ONLY : npool, kunit, inter_pool_comm
   USE mp,                   ONLY : mp_sum
   USE check_stop,           ONLY : check_stop_now
-  USE wavefunctions_gpum,   ONLY : using_evc
+  USE wavefunctions_gpum,   ONLY : using_evc, evc_d
   USE wvfct_gpum,           ONLY : using_et
   IMPLICIT NONE
   !
@@ -900,7 +897,7 @@ SUBROUTINE c_bands_nscf( )
   !
   CALL using_evc(1)
   DO ik = 1, ik_
-     CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+     CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
   ENDDO
   !
   IF ( isolve == 0 ) THEN
@@ -956,7 +953,7 @@ SUBROUTINE c_bands_nscf( )
      IF ( TRIM(starting_wfc) == 'file' ) THEN
         !
         CALL using_evc(1)
-        CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+        CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
         !
      ELSE
         !
@@ -972,7 +969,7 @@ SUBROUTINE c_bands_nscf( )
      ! ... save wave-functions (unless disabled in input)
      !
      IF ( io_level > -1 ) CALL using_evc(0)
-     IF ( io_level > -1 ) CALL save_buffer( evc, nwordwfc, iunwfc, ik )
+     IF ( io_level > -1 ) CALL save_buffer( evc_d, nwordwfc, iunwfc, ik )
      !
      ! ... beware: with pools, if the number of k-points on different
      ! ... pools differs, make sure that all processors are still in

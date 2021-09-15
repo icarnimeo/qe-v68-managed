@@ -1604,9 +1604,8 @@ FUNCTION exxenergyace( )
   USE mp_bands,        ONLY : intra_bgrp_comm
   USE mp,              ONLY : mp_sum
   USE control_flags,   ONLY : gamma_only
-  USE wavefunctions,   ONLY : evc
   !
-  USE wavefunctions_gpum, ONLY : using_evc
+  USE wavefunctions_gpum, ONLY : using_evc, evc_d
   !
   IMPLICIT NONE
   !
@@ -1627,12 +1626,12 @@ FUNCTION exxenergyace( )
      npw = ngk (ik)
      current_k = ik
      IF ( lsda ) current_spin = isk(ik)
-     IF (nks > 1) CALL get_buffer(evc, nwordwfc, iunwfc, ik)
+     IF (nks > 1) CALL get_buffer(evc_d, nwordwfc, iunwfc, ik)
      IF (nks > 1) CALL using_evc(2)
      IF (gamma_only) THEN
-        CALL vexxace_gamma( npw, nbnd, evc, ex )
+        CALL vexxace_gamma( npw, nbnd, evc_d, ex )
      ELSE
-        CALL vexxace_k( npw, nbnd, evc, ex )
+        CALL vexxace_k( npw, nbnd, evc_d, ex )
      ENDIF
      exxenergyace = exxenergyace + ex
   ENDDO

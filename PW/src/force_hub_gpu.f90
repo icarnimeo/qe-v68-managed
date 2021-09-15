@@ -40,7 +40,6 @@ SUBROUTINE force_hub_gpu( forceh )
                                     deallocate_bec_type
    USE uspp,                 ONLY : nkb, vkb, vkb_d, ofsbeta, using_vkb_d
    USE uspp_param,           ONLY : nh
-   USE wavefunctions,        ONLY : evc
    USE klist,                ONLY : nks, xk, ngk, igk_k, igk_k_d
    USE io_files,             ONLY : nwordwfc, iunwfc, nwordwfcU
    USE buffers,              ONLY : get_buffer
@@ -149,7 +148,7 @@ SUBROUTINE force_hub_gpu( forceh )
       !
       IF (nks > 1)  CALL using_evc(2)
       IF (nks > 1) &
-         CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+         CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
       CALL using_evc_d(0)
       !
       CALL using_vkb_d(2)
@@ -169,7 +168,7 @@ SUBROUTINE force_hub_gpu( forceh )
       CALL orthoUwfc2 (ik)
       CALL dev_memcpy( wfcU_d , wfcU )
       !
-      ! proj=<wfcU|S|evc>
+      ! proj=<wfcU|S|evc_d>
       CALL calbec_gpu( npw, wfcU_d, spsi_d, proj_d )
       !
       ! now we need the first derivative of proj with respect to tau(alpha,ipol)
@@ -354,7 +353,7 @@ SUBROUTINE dndtau_k_gpu ( ldim, proj_d, spsi_d, alpha, jkb0, ipol, ik, nb_s, &
    COMPLEX (DP), INTENT(IN) :: proj_d(nwfcU,nbnd)
    !! projection
    COMPLEX(DP), INTENT(IN) :: spsi_d(npwx,nbnd)
-   !! \(S|\ \text{evc}\rangle\)
+   !! \(S|\ \text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom index
    INTEGER, INTENT(IN) :: jkb0
@@ -550,7 +549,7 @@ SUBROUTINE dndtau_gamma_gpu ( ldim, rproj_d, spsi_d, alpha, jkb0, ipol, ik, &
    REAL(DP), INTENT(IN) ::  rproj_d(nwfcU,nbnd)
    !! projection
    COMPLEX(DP), INTENT(IN) :: spsi_d(npwx,nbnd)
-   !! \(S\ |\text{evc}\rangle\)
+   !! \(S\ |\text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom index
    INTEGER, INTENT(IN) :: jkb0
@@ -719,7 +718,7 @@ SUBROUTINE dngdtau_k_gpu ( ldim, proj_d, spsi_d, alpha, jkb0, ipol, ik, nb_s, &
    COMPLEX (DP), INTENT(IN) :: proj_d(nwfcU,nbnd)
    !! projection
    COMPLEX (DP), INTENT(IN) :: spsi_d(npwx,nbnd)
-   !! \(S|\ \text{evc}\rangle\)
+   !! \(S|\ \text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom index
    INTEGER, INTENT(IN) :: jkb0
@@ -952,7 +951,7 @@ SUBROUTINE dngdtau_gamma_gpu ( ldim, rproj_d, spsi_d, alpha, jkb0, ipol, ik, nb_
    REAL (DP), INTENT(IN) :: rproj_d(nwfcU,nbnd)
    !! projection
    COMPLEX(DP), INTENT(IN) :: spsi_d(npwx,nbnd)
-   !! \(S\ |\text{evc}\rangle\)
+   !! \(S\ |\text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom index
    INTEGER, INTENT(IN) :: jkb0
@@ -1141,7 +1140,7 @@ SUBROUTINE dprojdtau_k_gpu( spsi_d, alpha, na, ijkb0, ipol, ik, nb_s, nb_e, myke
    ! I/O variables
    !
    COMPLEX(DP), INTENT(IN) :: spsi_d(npwx,nbnd)
-   !! \(S\ |\text{evc}\rangle\)
+   !! \(S\ |\text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom
    INTEGER, INTENT(IN) :: na
@@ -1695,7 +1694,6 @@ SUBROUTINE dprojdtau_gamma_gpu( spsi_d, alpha, ijkb0, ipol, ik, nb_s, nb_e, &
    USE wvfct,                ONLY : nbnd, npwx,  wg
    USE uspp,                 ONLY : nkb, vkb_d, qq_at_d, using_vkb_d
    USE uspp_param,           ONLY : nh
-   USE wavefunctions,        ONLY : evc
    USE becmod_gpum,          ONLY : bec_type_d, becp_d
    USE becmod_subs_gpum,     ONLY : calbec_gpu
    USE mp_bands,             ONLY : intra_bgrp_comm
@@ -1710,7 +1708,7 @@ SUBROUTINE dprojdtau_gamma_gpu( spsi_d, alpha, ijkb0, ipol, ik, nb_s, nb_e, &
    ! I/O variables
    !
    COMPLEX(DP), INTENT(IN) :: spsi_d(npwx,nbnd)
-   !! \(S\ |\text{evc}\rangle\)
+   !! \(S\ |\text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: alpha
    !! the displaced atom
    INTEGER, INTENT(IN) :: ijkb0
@@ -1744,8 +1742,8 @@ SUBROUTINE dprojdtau_gamma_gpu( spsi_d, alpha, ijkb0, ipol, ik, nb_s, nb_e, &
                             betapsi0_d(:,:)
    !      dwfc(npwx,ldim),       ! the derivative of the atomic wavefunction
    !      dbeta(npwx,nhm),       ! the derivative of the beta function
-   !      betapsi(nhm,nbnd),     ! <beta|evc>
-   !      dbetapsi(nhm,nbnd),    ! <dbeta|evc>
+   !      betapsi(nhm,nbnd),     ! <beta|evc_d>
+   !      dbetapsi(nhm,nbnd),    ! <dbeta|evc_d>
    !      wfatbeta(nwfcU,nhm),   ! <wfcU|beta>
    !      wfatdbeta(nwfcU,nhm)   ! <wfcU|dbeta>
    !

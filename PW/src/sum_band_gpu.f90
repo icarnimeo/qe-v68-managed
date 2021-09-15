@@ -34,7 +34,7 @@ SUBROUTINE sum_band_gpu()
   USE uspp,                 ONLY : nkb, vkb, becsum, ebecsum, nhtol, nhtoj, indv, okvan, &
                                    becsum_d, ebecsum_d, vkb_d, using_vkb, using_vkb_d
   USE uspp_param,           ONLY : upf, nh, nhm
-  USE wavefunctions,        ONLY : evc, psic
+  USE wavefunctions,        ONLY : psic
   USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
   USE spin_orb,             ONLY : lspinorb, domag, fcoef
   USE wvfct,                ONLY : nbnd, npwx, wg, et, btype
@@ -338,8 +338,8 @@ SUBROUTINE sum_band_gpu()
           !
           CALL start_clock_gpu( 'sum_band:buffer' )
           IF ( nks > 1 ) &
-             CALL get_buffer ( evc, nwordwfc, iunwfc, ik )
-          IF ( nks > 1 ) CALL using_evc(2) ! get_buffer(evc, ...) evc is updated (intent out)
+             CALL get_buffer ( evc_d, nwordwfc, iunwfc, ik )
+          IF ( nks > 1 ) CALL using_evc(2) ! get_buffer(evc_d, ...) evc_d is updated (intent out)
           IF ( nks > 1 ) CALL using_evc_d(0) ! sync on the GPU
           !
           CALL stop_clock_gpu( 'sum_band:buffer' )
@@ -487,16 +487,16 @@ SUBROUTINE sum_band_gpu()
                    IF ( ibnd < ibnd_end ) THEN
                       ! ... two ffts at the same time
                       psic(dffts%nl (1:npw))=CMPLX(0d0, kplusg(1:npw),kind=DP) * &
-                                            ( evc(1:npw,ibnd) + &
-                                            ( 0.D0, 1.D0 ) * evc(1:npw,ibnd+1) )
+                                            ( evc_d(1:npw,ibnd) + &
+                                            ( 0.D0, 1.D0 ) * evc_d(1:npw,ibnd+1) )
                       psic(dffts%nlm(1:npw)) = CMPLX(0d0, -kplusg(1:npw),kind=DP) * &
-                                       CONJG( evc(1:npw,ibnd) - &
-                                            ( 0.D0, 1.D0 ) * evc(1:npw,ibnd+1) )
+                                       CONJG( evc_d(1:npw,ibnd) - &
+                                            ( 0.D0, 1.D0 ) * evc_d(1:npw,ibnd+1) )
                    ELSE
                       psic(dffts%nl(1:npw)) = CMPLX(0d0, kplusg(1:npw),kind=DP) * &
-                                              evc(1:npw,ibnd)
+                                              evc_d(1:npw,ibnd)
                       psic(dffts%nlm(1:npw)) = CMPLX(0d0, -kplusg(1:npw),kind=DP) * &
-                                       CONJG( evc(1:npw,ibnd) )
+                                       CONJG( evc_d(1:npw,ibnd) )
                    END IF
                    !
                    CALL invfft ('Wave', psic, dffts)
@@ -651,9 +651,9 @@ SUBROUTINE sum_band_gpu()
           !
           CALL start_clock_gpu( 'sum_band:buffer' )
           IF ( nks > 1 ) &
-             CALL get_buffer ( evc, nwordwfc, iunwfc, ik )
+             CALL get_buffer ( evc_d, nwordwfc, iunwfc, ik )
           IF ( nks > 1 ) CALL using_evc(2)
-          IF ( nks > 1 ) CALL using_evc_d(0)  ! sync evc on GPU, OPTIMIZE (use async here)
+          IF ( nks > 1 ) CALL using_evc_d(0)  ! sync evc_d on GPU, OPTIMIZE (use async here)
           CALL stop_clock_gpu( 'sum_band:buffer' )
           !
           CALL start_clock_gpu( 'sum_band:init_us_2' )
@@ -870,7 +870,7 @@ SUBROUTINE sum_band_gpu()
                       !
                       kplusg (1:npw) = (xk(j,ik)+g(j,igk_k(1:npw,ik))) * tpiba
                       psic(dffts%nl(igk_k(1:npw,ik)))=CMPLX(0d0,kplusg(1:npw),kind=DP) * &
-                                              evc(1:npw,ibnd)
+                                              evc_d(1:npw,ibnd)
                       !
                       CALL invfft ('Wave', psic, dffts)
                       !
@@ -1070,7 +1070,6 @@ SUBROUTINE sum_bec_gpu ( ik, current_spin, ibnd_start, ibnd_end, this_bgrp_nbnd 
   USE wvfct,              ONLY : nbnd, wg, et, current_k
   USE klist,              ONLY : ngk, nkstot
   USE noncollin_module,   ONLY : noncolin, npol
-  USE wavefunctions,      ONLY : evc
   USE realus,             ONLY : real_space, &
                                  invfft_orbital_gamma, calbec_rs_gamma, &
                                  invfft_orbital_k, calbec_rs_k
@@ -1119,7 +1118,7 @@ SUBROUTINE sum_bec_gpu ( ik, current_spin, ibnd_start, ibnd_end, this_bgrp_nbnd 
      CALL using_becp_auto(2)
      if (gamma_only) then
         do ibnd = ibnd_start, ibnd_end, 2
-           call invfft_orbital_gamma(evc,ibnd,ibnd_end) 
+           call invfft_orbital_gamma(evc_d,ibnd,ibnd_end) 
            call calbec_rs_gamma(ibnd,ibnd_end,becp%r)
         enddo
         call mp_sum(becp%r,inter_bgrp_comm)
@@ -1127,7 +1126,7 @@ SUBROUTINE sum_bec_gpu ( ik, current_spin, ibnd_start, ibnd_end, this_bgrp_nbnd 
         current_k = ik
         becp%k = (0.d0,0.d0)
         do ibnd = ibnd_start, ibnd_end
-           call invfft_orbital_k(evc,ibnd,ibnd_end) 
+           call invfft_orbital_k(evc_d,ibnd,ibnd_end) 
            call calbec_rs_k(ibnd,ibnd_end)
         enddo
        call mp_sum(becp%k,inter_bgrp_comm)

@@ -59,7 +59,6 @@ SUBROUTINE localize_orbitals()
   USE noncollin_module,     ONLY : npol
   USE wvfct,                ONLY : nbnd, npwx, current_k
   USE exx,                  ONLY : x_occupation
-  USE wavefunctions,        ONLY : evc
   USE lsda_mod,             ONLY : current_spin, lsda, isk
   USE klist,                ONLY : nks, xk, ngk, igk_k
   USE io_files,             ONLY : nwordwfc, iunwfc
@@ -67,7 +66,7 @@ SUBROUTINE localize_orbitals()
   USE control_flags,        ONLY : lmd
   USE xc_lib,               ONLY : xclib_dft_is
   !
-  USE wavefunctions_gpum,   ONLY : using_evc
+  USE wavefunctions_gpum,   ONLY : using_evc, evc_d
   !   
   implicit none
   integer :: NGrid, ikq, NBands, npw
@@ -108,7 +107,7 @@ SUBROUTINE localize_orbitals()
     allocate( MatQ(NBands,NBands), MatC(NBands,NBands), evcbuff(npwx*npol, nbnd)   )
     IF ( lsda ) current_spin = isk(ikq) 
     IF ( nks > 1 ) CALL using_evc(2)
-    IF ( nks > 1 ) CALL get_buffer(evc, nwordwfc, iunwfc, ikq)
+    IF ( nks > 1 ) CALL get_buffer(evc_d, nwordwfc, iunwfc, ikq)
     locmat(:,:,ikq) = One
     CALL measure_localization(HowTo,NBands,ikq)  ! compute: 
                                                  ! the matrix of absolute overlap integrals
@@ -118,17 +117,17 @@ SUBROUTINE localize_orbitals()
       CALL SCDM_PGG(locbuff(1,1,ikq), NGrid, NBands)  ! localization with SCDM in R-space
       CALL wave_to_G(locbuff(1,1,ikq), locbuff_G(1,1,ikq), NGrid, NBands) ! bring the localized functions to G-space
     END IF
-!   FROM HERE: align the orbitals in evc (step n) to the orbitals in locbuff_G (step n-1)
-!   MatQ contains the overlap between orbitals in evc and orbitals in locbuff_G  
-    Call matcalc ('<Psi2|W1>',   .false.,   0, npw, NBands, NBands, locbuff_G(1,1,ikq), evc, MatQ, tmp)
+!   FROM HERE: align the orbitals in evc_d (step n) to the orbitals in locbuff_G (step n-1)
+!   MatQ contains the overlap between orbitals in evc_d and orbitals in locbuff_G  
+    Call matcalc ('<Psi2|W1>',   .false.,   0, npw, NBands, NBands, locbuff_G(1,1,ikq), evc_d, MatQ, tmp)
     Call MatCheck(MatQ, NBands)  ! Orthonormalization check
     Call PTSVD(MatQ, NBands)  ! SVD of MatQ
     MatC = (One,Zero)*MatQ
-!   align the orbitals in evc rotating them with the unitary matrix in MatC 
-    Call ZGEMM('N','T',npw,NBands,NBands,One,evc,npw,MatC,NBands,Zero,evcbuff,npw) 
+!   align the orbitals in evc_d rotating them with the unitary matrix in MatC 
+    Call ZGEMM('N','T',npw,NBands,NBands,One,evc_d,npw,MatC,NBands,Zero,evcbuff,npw) 
     CALL matcalc('<W(t)|W(t)>-',.false.,0,npw,NBands,NBands,locbuff_G(1,1,ikq),evcbuff,MatQ,tmp)
     Call MatCheck(MatQ, NBands) ! Orthonormalization check 
-!   TO HERE: align the orbitals in evc (step n) to the orbitals in locbuff_G (step n-1)
+!   TO HERE: align the orbitals in evc_d (step n) to the orbitals in locbuff_G (step n-1)
 
 !   IF(QRCP) just delete locbuff_G. 
     IF(.not.QRCP) THEN  ! save locbuff_G for the next iteration  

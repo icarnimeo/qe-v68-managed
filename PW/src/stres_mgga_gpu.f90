@@ -17,7 +17,7 @@ SUBROUTINE stres_mgga_gpu( sigmaxc )
   USE cell_base,              ONLY : alat, at, bg, omega, tpiba
   USE gvect,                  ONLY : g
   USE scf,                    ONLY : rho, v
-  USE wavefunctions,          ONLY : evc
+  USE wavefunctions_gpum,          ONLY : evc_d
   USE xc_lib,                 ONLY : xclib_dft_is
   USE klist,                  ONLY : nks, xk, ngk
   USE buffers,                ONLY : get_buffer
@@ -99,7 +99,7 @@ SUBROUTINE stres_mgga_gpu( sigmaxc )
     ! Read the wavefunctions 
     !
     IF ( nks > 1 ) THEN
-       CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+       CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
        CALL using_evc(2)
     ENDIF
     !

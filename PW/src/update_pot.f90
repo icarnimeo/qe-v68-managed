@@ -643,7 +643,6 @@ SUBROUTINE extrapolate_wfcs( wfc_extr )
                                    iunoldwfc2, diropn
   USE buffers,              ONLY : get_buffer, save_buffer
   USE uspp,                 ONLY : nkb, vkb, okvan, using_vkb
-  USE wavefunctions,        ONLY : evc
   USE noncollin_module,     ONLY : noncolin, npol
   USE control_flags,        ONLY : gamma_only
   USE becmod,               ONLY : allocate_bec_type, deallocate_bec_type, &
@@ -651,7 +650,7 @@ SUBROUTINE extrapolate_wfcs( wfc_extr )
   USE mp_images,            ONLY : intra_image_comm
   USE mp,                   ONLY : mp_barrier
   USE mp_bands,             ONLY : use_bgrp_in_hpsi
-  USE wavefunctions_gpum,   ONLY : using_evc
+  USE wavefunctions_gpum,   ONLY : using_evc, evc_d
   USE becmod_subs_gpum,     ONLY : using_becp_auto
   !
   IMPLICIT NONE
@@ -696,9 +695,9 @@ SUBROUTINE extrapolate_wfcs( wfc_extr )
         !
         ! ... "now"  -> "old"
         !
-        IF ( nks > 1 ) CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+        IF ( nks > 1 ) CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
         IF ( nks > 1 ) CALL using_evc(2)
-        CALL davcio( evc, 2*nwordwfc, iunoldwfc, ik, +1 )
+        CALL davcio( evc_d, 2*nwordwfc, iunoldwfc, ik, +1 )
         !
      END DO
      !
@@ -724,8 +723,8 @@ SUBROUTINE extrapolate_wfcs( wfc_extr )
      ALLOCATE( sp_m( nbnd, nbnd ), u_m( nbnd, nbnd ), w_m( nbnd, nbnd ), ew( nbnd ) )
      CALL allocate_bec_type ( nkb, nbnd, becp ) 
      !
-     IF( SIZE( aux ) /= SIZE( evc ) ) &
-        CALL errore('extrapolate_wfcs ', ' aux wrong size ', ABS( SIZE( aux ) - SIZE( evc ) ) ) 
+     IF( SIZE( aux ) /= SIZE( evc_d ) ) &
+        CALL errore('extrapolate_wfcs ', ' aux wrong size ', ABS( SIZE( aux ) - SIZE( evc_d ) ) ) 
      !
      ! query workspace
      !
@@ -751,9 +750,9 @@ SUBROUTINE extrapolate_wfcs( wfc_extr )
         ! ... read wavefcts as (t-dt), replace with wavefcts at (t)
         !
         CALL davcio( evcold, 2*nwordwfc, iunoldwfc, ik, -1 )
-        IF ( nks > 1 ) CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+        IF ( nks > 1 ) CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
         IF ( nks > 1 ) CALL using_evc(2)
-        CALL davcio(    evc, 2*nwordwfc, iunoldwfc, ik, +1 )
+        CALL davcio(    evc_d, 2*nwordwfc, iunoldwfc, ik, +1 )
         !
         npw = ngk (ik)
         IF ( okvan ) THEN
@@ -765,14 +764,14 @@ SUBROUTINE extrapolate_wfcs( wfc_extr )
            IF ( nkb > 0 ) CALL using_vkb(1)
            IF ( nkb > 0 ) CALL init_us_2( npw, igk_k(1,ik), xk(1,ik), vkb )
            CALL using_becp_auto(2)
-           CALL calbec( npw, vkb, evc, becp )
-           CALL s_psi ( npwx, npw, nbnd, evc, aux )
+           CALL calbec( npw, vkb, evc_d, becp )
+           CALL s_psi ( npwx, npw, nbnd, evc_d, aux )
            !
         ELSE
            !
            ! ... Norm-Conserving  PP: no overlap matrix
            !
-           aux = evc
+           aux = evc_d
            !
         END IF
         !
@@ -817,9 +816,9 @@ SUBROUTINE extrapolate_wfcs( wfc_extr )
         !
         CALL using_evc(1)
         IF ( wfc_extr == 3 ) THEN
-           evc = ( 1.0_dp + alpha0 ) * evc + ( beta0 - alpha0 ) * aux
+           evc_d = ( 1.0_dp + alpha0 ) * evc_d + ( beta0 - alpha0 ) * aux
         ELSE
-           evc = 2.0_dp * evc - aux
+           evc_d = 2.0_dp * evc_d - aux
         END IF
         !
         IF ( wfc_order > 2 ) THEN
@@ -839,7 +838,7 @@ SUBROUTINE extrapolate_wfcs( wfc_extr )
               CALL ZGEMM( 'N', 'C', npw, nbnd, nbnd, ONE, &
                           evcold, npwx, sp_m, nbnd, ZERO, aux, npwx )
               !
-              evc = evc - beta0 * aux
+              evc_d = evc_d - beta0 * aux
               !
            END IF
            !
@@ -848,7 +847,7 @@ SUBROUTINE extrapolate_wfcs( wfc_extr )
         ! ... save interpolated wavefunctions to file iunwfc
         !
         ! CALL using_evc(0) aldready done above
-        IF ( nks > 1 ) CALL save_buffer( evc, nwordwfc, iunwfc, ik )
+        IF ( nks > 1 ) CALL save_buffer( evc_d, nwordwfc, iunwfc, ik )
         !
      END DO
      !

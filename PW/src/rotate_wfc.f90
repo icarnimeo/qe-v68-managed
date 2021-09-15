@@ -7,12 +7,12 @@
 !
 !
 !------------------------------------------------------------------------------------
-SUBROUTINE rotate_wfc( npwx, npw, nstart, gstart, nbnd, psi, npol, overlap, evc, e )
+SUBROUTINE rotate_wfc( npwx, npw, nstart, gstart, nbnd, psi, npol, overlap, evc_d, e )
   !--------------------------------------------------------------------------------
   !! Driver routine (maybe it should be an interface) for Hamiltonian 
   !! diagonalization in the subspace spanned by nstart states 
   !! psi (atomic or random wavefunctions). 
-  !! Produces on output nbnd eigenvectors ( nbnd <= nstart ) in evc.
+  !! Produces on output nbnd eigenvectors ( nbnd <= nstart ) in evc_d.
   !! Calls \(\texttt{h_psi, s_psi}\) to calculate \(H|psi\rangle\) and
   !! \(S|psi\rangle\). 
   !! It only uses an auxiliary array of the same size as psi.
@@ -38,7 +38,7 @@ SUBROUTINE rotate_wfc( npwx, npw, nstart, gstart, nbnd, psi, npol, overlap, evc,
   !! if .FALSE. \(S|psi\rangle\) not needed
   COMPLEX(DP), INTENT(INOUT) :: psi(npwx*npol,nstart)
   !! I/O eigenvectors (may overlap)
-  COMPLEX(DP), INTENT(INOUT) :: evc(npwx*npol,nbnd)
+  COMPLEX(DP), INTENT(INOUT) :: evc_d(npwx*npol,nbnd)
   !! I/O eigenvectors (may overlap)
   REAL(DP), INTENT(OUT) :: e(nbnd)
   !! eigenvalues
@@ -60,13 +60,13 @@ SUBROUTINE rotate_wfc( npwx, npw, nstart, gstart, nbnd, psi, npol, overlap, evc,
         !write (*,*) 'inside para gamma'; FLUSH(6)
         !
         CALL protate_wfc_gamma ( h_psi, s_psi, overlap, &
-                                 npwx, npw, nstart, nbnd, psi, evc, e )
+                                 npwx, npw, nstart, nbnd, psi, evc_d, e )
         !
      ELSE
         !write (*,*) 'inside para k'; FLUSH(6)
         !
         CALL protate_wfc_k( h_psi, s_psi, overlap, &
-                            npwx, npw, nstart, nbnd, npol, psi, evc, e )
+                            npwx, npw, nstart, nbnd, npol, psi, evc_d, e )
         !
      ENDIF
      !
@@ -78,13 +78,13 @@ SUBROUTINE rotate_wfc( npwx, npw, nstart, gstart, nbnd, psi, npol, overlap, evc,
         !write (*,*) 'inside serial gamma'; FLUSH(6)
         !
         CALL rotate_wfc_gamma( h_psi, s_psi, overlap, &
-                               npwx, npw, nstart, nbnd, psi, evc, e )
+                               npwx, npw, nstart, nbnd, psi, evc_d, e )
         !
      ELSE
   !write (*,*) 'inside serial k'; FLUSH(6)
         !
         CALL rotate_wfc_k( h_psi, s_psi, overlap, &
-                           npwx, npw, nstart, nbnd, npol, psi, evc, e )
+                           npwx, npw, nstart, nbnd, npol, psi, evc_d, e )
         !
      ENDIF
      !

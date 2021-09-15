@@ -29,7 +29,7 @@ SUBROUTINE write_casino_wfn(gather,blip,multiplicity,binwrite,single_precision_b
    USE uspp_param, ONLY: nh
    USE io_global, ONLY: stdout, ionode, ionode_id
    USE io_files, ONLY: nwordwfc, iunwfc, prefix, tmp_dir, seqopn
-   USE wavefunctions, ONLY : evc
+   USE wavefunctions_gpum, ONLY : evc_d
    USE mp_pools, ONLY: inter_pool_comm, intra_pool_comm, nproc_pool, me_pool
    USE mp_bands, ONLY: intra_bgrp_comm
    USE mp, ONLY: mp_sum, mp_gather, mp_bcast, mp_get
@@ -218,11 +218,11 @@ SUBROUTINE write_casino_wfn(gather,blip,multiplicity,binwrite,single_precision_b
       DO ispin = 1, nspin
          ikk = ik + nk*(ispin-1)
          npw = ngk(ikk)
-         IF( nks > 1 ) CALL get_buffer(evc,nwordwfc,iunwfc,ikk)
+         IF( nks > 1 ) CALL get_buffer(evc_d,nwordwfc,iunwfc,ikk)
          IF( nks > 1 ) CALL using_evc(2)
          DO ibnd = 1, nbnd
             evc_l(:) = (0.d0, 0d0)
-            evc_l(gtoig(igk_k(1:npw,ikk))) = evc(1:npw,ibnd)
+            evc_l(gtoig(igk_k(1:npw,ikk))) = evc_d(1:npw,ibnd)
             IF(blip)THEN
                iorb = iorb + 1
                IF(gamma_only)THEN
@@ -374,12 +374,12 @@ CONTAINS
          DO ik = 1, nk
             ikk = ik + nk*(ispin-1)
             npw = ngk(ikk)
-            IF( nks > 1 ) CALL get_buffer (evc, nwordwfc, iunwfc, ikk )
+            IF( nks > 1 ) CALL get_buffer (evc_d, nwordwfc, iunwfc, ikk )
             IF( nks > 1 ) CALL using_evc(2)
             !
             CALL using_vkb(1)
             CALL init_us_2 (npw, igk_k(1,ikk), xk (1, ikk), vkb)
-            CALL calbec ( npw, vkb, evc, becp )
+            CALL calbec ( npw, vkb, evc_d, becp )
             !
             ! -TS term for metals (if any)
             !
@@ -398,10 +398,10 @@ CONTAINS
             DO ibnd = 1, nbnd
                DO j = 1, npw
                   IF(gamma_only)THEN !.and.j>1)then
-                     ek = ek +  2*conjg(evc(j,ibnd)) * evc(j,ibnd) * &
+                     ek = ek +  2*conjg(evc_d(j,ibnd)) * evc_d(j,ibnd) * &
                                     g2kin(j) * wg(ibnd,ikk)
                   ELSE
-                     ek = ek +  conjg(evc(j,ibnd)) * evc(j,ibnd) * &
+                     ek = ek +  conjg(evc_d(j,ibnd)) * evc_d(j,ibnd) * &
                                     g2kin(j) * wg(ibnd,ikk)
                   ENDIF
                ENDDO
@@ -872,9 +872,9 @@ CONTAINS
    END SUBROUTINE write_wfn_head
 
 
-   SUBROUTINE write_pwfn_data(ik,ispin,ibnd,evc,indx)
+   SUBROUTINE write_pwfn_data(ik,ispin,ibnd,evc_d,indx)
       INTEGER,INTENT(in) :: ik,ispin,ibnd
-      COMPLEX(DP),INTENT(in) :: evc(:)
+      COMPLEX(DP),INTENT(in) :: evc_d(:)
       INTEGER,INTENT(in) :: indx(:)
       INTEGER ig,j,ikk
 
@@ -899,7 +899,7 @@ CONTAINS
       ! WRITE(io,*) ibnd, ispin, et(ibnd,ikk)/e2, wg(ibnd,ikk)/wk(ikk)
       WRITE(io,'(a)') ' Eigenvectors coefficients'
       DO ig=1, size(indx,1)
-         WRITE(io,*)evc(indx(ig))
+         WRITE(io,*)evc_d(indx(ig))
       ENDDO
    END SUBROUTINE write_pwfn_data
 

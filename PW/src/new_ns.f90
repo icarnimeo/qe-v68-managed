@@ -30,7 +30,7 @@ SUBROUTINE new_ns( ns )
   USE symm_base,            ONLY : nsym, irt
   USE wvfct,                ONLY : nbnd, npwx, wg
   USE control_flags,        ONLY : gamma_only
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   USE io_files,             ONLY : nwordwfc, iunwfc, nwordwfcU, iunhub
   USE buffers,              ONLY : get_buffer
   USE mp_pools,             ONLY : inter_pool_comm
@@ -77,7 +77,7 @@ SUBROUTINE new_ns( ns )
      !
      npw = ngk(ik)
      !
-     IF (nks > 1) CALL get_buffer (evc, nwordwfc, iunwfc, ik)
+     IF (nks > 1) CALL get_buffer (evc_d, nwordwfc, iunwfc, ik)
      IF (nks > 1) CALL using_evc(1)
      !
      ! make the projection
@@ -86,7 +86,7 @@ SUBROUTINE new_ns( ns )
         CALL compute_pproj( ik, q_ae, proj )
      ELSE
         IF (nks > 1) CALL get_buffer( wfcU, nwordwfcU, iunhub, ik )
-        CALL calbec( npw, wfcU, evc, proj )
+        CALL calbec( npw, wfcU, evc_d, proj )
      ENDIF
      !
      ! compute the occupation matrix (ns_{I,s,m1,m2}) of the
@@ -234,7 +234,7 @@ SUBROUTINE compute_pproj( ik, q, p )
     USE uspp,                 ONLY : nkb, vkb, ofsbeta, using_vkb
     USE uspp_param,           ONLY : nhm, nh
     USE wvfct,                ONLY : nbnd
-    USE wavefunctions,        ONLY : evc
+    USE wavefunctions_gpum,        ONLY : evc_d
     USE control_flags,        ONLY : gamma_only
     USE ldaU,                 ONLY : is_hubbard, nwfcU
     USE becmod,               ONLY : bec_type, calbec, &
@@ -268,7 +268,7 @@ SUBROUTINE compute_pproj( ik, q, p )
     CALL using_vkb(1)
     CALL init_us_2( npw, igk_k(1,ik), xk(1,ik), vkb )
     CALL using_evc(0)
-    CALL calbec( npw, vkb, evc, becp )
+    CALL calbec( npw, vkb, evc_d, becp )
     ! does not need mp_sum intra-pool, since it is already done in calbec 
     !
     IF ( gamma_only ) THEN 
@@ -323,7 +323,7 @@ SUBROUTINE new_ns_nc( ns )
   USE symm_base,            ONLY : nsym, irt, time_reversal, t_rev
   USE wvfct,                ONLY : nbnd, npwx, wg
   USE control_flags,        ONLY : gamma_only
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   USE gvect,                ONLY : gstart
   USE io_files,             ONLY : nwordwfc, iunwfc, nwordwfcU, iunhub
   USE buffers,              ONLY : get_buffer
@@ -362,7 +362,7 @@ SUBROUTINE new_ns_nc( ns )
      !
      npw = ngk (ik)
      IF (nks > 1) THEN
-        CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+        CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
         CALL using_evc(1)
         CALL get_buffer( wfcU, nwordwfcU, iunhub, ik )
      ENDIF
@@ -371,7 +371,7 @@ SUBROUTINE new_ns_nc( ns )
      !
      DO ibnd = 1, nbnd
         DO i = 1, nwfcU
-           proj(i,ibnd) = dot_product(wfcU(1:npwx*npol,i), evc(1:npwx*npol,ibnd))
+           proj(i,ibnd) = dot_product(wfcU(1:npwx*npol,i), evc_d(1:npwx*npol,ibnd))
         ENDDO
      ENDDO
      !

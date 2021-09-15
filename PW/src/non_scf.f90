@@ -22,7 +22,7 @@ SUBROUTINE non_scf( )
   USE klist,                ONLY : xk, wk, nks, nkstot, two_fermi_energies
   USE lsda_mod,             ONLY : lsda, nspin
   USE wvfct,                ONLY : nbnd, et, npwx
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   !
   USE wavefunctions_gpum, ONLY : using_evc
   USE wvfct_gpum,                ONLY : using_et
@@ -104,7 +104,7 @@ SUBROUTINE non_scf( )
   IF ( nks == 1 .AND. (io_level < 2) .AND. (io_level > -1) ) &
         CALL using_evc(0) ! save buffer is intent(in)
   IF ( nks == 1 .AND. (io_level < 2) .AND. (io_level > -1) ) &
-        CALL save_buffer( evc, nwordwfc, iunwfc, nks )
+        CALL save_buffer( evc_d, nwordwfc, iunwfc, nks )
   !
   ! ... do a Berry phase polarization calculation if required
   !

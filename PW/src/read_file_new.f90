@@ -18,7 +18,7 @@ SUBROUTINE read_file()
   USE wvfct,            ONLY : nbnd, npwx
   USE noncollin_module, ONLY : npol
   USE klist,            ONLY : nks
-  USE wavefunctions,    ONLY : evc
+  USE wavefunctions_gpum,    ONLY : evc_d
   USE pw_restart_new,   ONLY : read_collected_wfc
   !
   USE wavefunctions_gpum, ONLY : using_evc
@@ -47,8 +47,8 @@ SUBROUTINE read_file()
           'Reading collected, re-writing distributed wavefunctions'
      CALL using_evc(1)
      DO ik = 1, nks
-        CALL read_collected_wfc ( restart_dir(), ik, evc )
-        CALL save_buffer ( evc, nwordwfc, iunwfc, ik )
+        CALL read_collected_wfc ( restart_dir(), ik, evc_d )
+        CALL save_buffer ( evc_d, nwordwfc, iunwfc, ik )
      END DO
      !
   ELSE

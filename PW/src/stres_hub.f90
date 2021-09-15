@@ -14,7 +14,7 @@ SUBROUTINE stres_hub ( sigmah )
    !! the quantity \( -(1/\omega)dE_h/\epsilon_{i,j} \)
    !
    USE kinds,              ONLY : DP
-   USE wavefunctions,      ONLY : evc
+   USE wavefunctions_gpum,      ONLY : evc_d
    USE ions_base,          ONLY : nat, ityp, ntyp => nsp
    USE cell_base,          ONLY : omega, at, bg
    USE wvfct,              ONLY : nbnd, npwx
@@ -142,22 +142,22 @@ SUBROUTINE stres_hub ( sigmah )
       IF (lsda) current_spin = isk(ik)
       npw = ngk(ik)
       !
-      IF (nks > 1) CALL get_buffer (evc, nwordwfc, iunwfc, ik)
+      IF (nks > 1) CALL get_buffer (evc_d, nwordwfc, iunwfc, ik)
       IF (nks > 1) CALL using_evc(2)
       !
       CALL init_us_2 (npw, igk_k(1,ik), xk(1,ik), vkb)
       CALL using_vkb(2)
       ! Compute spsi = S * psi
       CALL allocate_bec_type ( nkb, nbnd, becp)
-      CALL calbec (npw, vkb, evc, becp)
-      CALL s_psi  (npwx, npw, nbnd, evc, spsi)
+      CALL calbec (npw, vkb, evc_d, becp)
+      CALL s_psi  (npwx, npw, nbnd, evc_d, spsi)
       CALL deallocate_bec_type (becp)
       !
       ! Set up various quantities, in particular wfcU which 
       ! contains Hubbard-U (ortho-)atomic wavefunctions (without ultrasoft S)
       CALL orthoUwfc2 (ik)
       !
-      ! proj=<wfcU|S|evc>
+      ! proj=<wfcU|S|evc_d>
       CALL calbec ( npw, wfcU, spsi, proj)
       !
       ! Compute derivatives of spherical harmonics and spherical Bessel functions
@@ -369,7 +369,7 @@ SUBROUTINE dndepsilon_k ( ipol,jpol,ldim,proj,spsi,ik,nb_s,nb_e,mykey,lpuk,dns )
    COMPLEX (DP), INTENT(IN) :: proj(nwfcU,nbnd)
    !! projection
    COMPLEX (DP), INTENT(IN) :: spsi(npwx,nbnd)
-   !! \(S|\ \text{evc}\rangle\)
+   !! \(S|\ \text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: ik
    !! k-point index
    INTEGER, INTENT(IN) :: nb_s
@@ -526,7 +526,7 @@ SUBROUTINE dndepsilon_gamma ( ipol,jpol,ldim,proj,spsi,ik,nb_s,nb_e,mykey,lpuk,d
    REAL (DP), INTENT(IN) :: proj(nwfcU,nbnd)
    !! projection
    COMPLEX (DP), INTENT(IN) :: spsi(npwx,nbnd)
-   !! \(S|\ \text{evc}\rangle\)
+   !! \(S|\ \text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: ik
    !! k-point index
    INTEGER, INTENT(IN) :: nb_s
@@ -681,7 +681,7 @@ SUBROUTINE dngdepsilon_k ( ipol,jpol,ldim,proj,spsi,ik,nb_s,nb_e,mykey,dnsg )
    COMPLEX (DP), INTENT(IN) :: proj(nwfcU,nbnd)
    !! projection
    COMPLEX (DP), INTENT(IN) :: spsi(npwx,nbnd)
-   !! \(S|\ \text{evc}\rangle\)
+   !! \(S|\ \text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: ik
    !! k-point index
    INTEGER, INTENT(IN) :: nb_s
@@ -824,7 +824,7 @@ SUBROUTINE dngdepsilon_gamma ( ipol,jpol,ldim,proj,spsi,ik,nb_s,nb_e,mykey,dnsg 
    REAL (DP), INTENT(IN) :: proj(nwfcU,nbnd)
    !! projection
    COMPLEX (DP), INTENT(IN) :: spsi(npwx,nbnd)
-   !! \(S|\ \text{evc}\rangle\)
+   !! \(S|\ \text{evc_d}\rangle\)
    INTEGER, INTENT(IN) :: ik
    !! k-point index
    INTEGER, INTENT(IN) :: nb_s
@@ -958,7 +958,7 @@ SUBROUTINE dprojdepsilon_k ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj )
    USE lsda_mod,             ONLY : lsda, nspin, isk
    USE wvfct,                ONLY : nbnd, npwx, wg
    USE uspp,                 ONLY : nkb, vkb, okvan
-   USE wavefunctions,        ONLY : evc
+   USE wavefunctions_gpum,        ONLY : evc_d
    USE becmod,               ONLY : becp, calbec
    USE basis,                ONLY : natomwfc, wfcatom, swfcatom
    USE force_mod,            ONLY : eigenval, eigenvect, overlap_inv, at_dy, at_dj
@@ -971,7 +971,7 @@ SUBROUTINE dprojdepsilon_k ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj )
    ! I/O variables 
    !
    COMPLEX(DP), INTENT(IN)  :: spsi(npwx,nbnd)
-   !! S|evc>
+   !! S|evc_d>
    INTEGER, INTENT(IN) :: ik
    !! k-point index
    INTEGER, INTENT(IN) :: ipol
@@ -1174,7 +1174,7 @@ SUBROUTINE dprojdepsilon_k ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj )
    IF (okvan) THEN
       ALLOCATE(dproj_us(nwfcU,nb_s:nb_e))
       CALL matrix_element_of_dSdepsilon (ik, ipol, jpol, &
-                         nwfcU, wfcU, nbnd, evc, dproj_us, nb_s, nb_e, mykey)
+                         nwfcU, wfcU, nbnd, evc_d, dproj_us, nb_s, nb_e, mykey)
       ! dproj + dproj_us
       DO m1 = 1, nwfcU
          dproj(m1,nb_s:nb_e) = dproj(m1,nb_s:nb_e) + dproj_us(m1,:)
@@ -1202,7 +1202,7 @@ SUBROUTINE matrix_element_of_dSdepsilon (ik, ipol, jpol, lA, A, lB, B, A_dS_B, l
    USE wvfct,                ONLY : npwx, wg
    USE uspp,                 ONLY : nkb, vkb, qq_at, okvan, using_vkb
    USE uspp_param,           ONLY : nh
-   USE wavefunctions,        ONLY : evc
+   USE wavefunctions_gpum,        ONLY : evc_d
    USE becmod,               ONLY : calbec
    USE klist,                ONLY : xk, igk_k, ngk
    USE force_mod,            ONLY : us_dy, us_dj
@@ -1381,7 +1381,7 @@ SUBROUTINE dprojdepsilon_gamma ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj 
    USE wvfct,                ONLY : nbnd, npwx, wg
    USE uspp,                 ONLY : nkb, vkb, qq_at, okvan, using_vkb
    USE uspp_param,           ONLY : nh
-   USE wavefunctions,        ONLY : evc
+   USE wavefunctions_gpum,        ONLY : evc_d
    USE becmod,               ONLY : becp, calbec
    USE force_mod,            ONLY : at_dy, at_dj, us_dy, us_dj
    USE wavefunctions_gpum,   ONLY : using_evc
@@ -1391,7 +1391,7 @@ SUBROUTINE dprojdepsilon_gamma ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj 
    ! I/O variables
    !
    COMPLEX(DP), INTENT(IN)  :: spsi(npwx,nbnd)
-   !! S|evc>
+   !! S|evc_d>
    INTEGER, INTENT(IN) :: ik
    !! k-point index
    INTEGER, INTENT(IN) :: ipol
@@ -1420,8 +1420,8 @@ SUBROUTINE dprojdepsilon_gamma ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj 
    REAL (DP), ALLOCATABLE :: &
            betapsi(:,:), dbetapsi(:,:), wfatbeta(:,:), wfatdbeta(:,:), &
            betapsi0(:,:)
-   !       betapsi(nhm,nbnd),     ! <beta|evc>
-   !       dbetapsi(nhm,nbnd),    ! <dbeta|evc>
+   !       betapsi(nhm,nbnd),     ! <beta|evc_d>
+   !       dbetapsi(nhm,nbnd),    ! <dbeta|evc_d>
    !       wfatbeta(nwfcU,nhm),! <wfc|beta>
    !       wfatdbeta(nwfcU,nhm)! <wfc|dbeta>
 
@@ -1521,7 +1521,7 @@ SUBROUTINE dprojdepsilon_gamma ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj 
                ENDDO
             ENDDO
             !
-            CALL calbec(npw, dbeta, evc, dbetapsi )
+            CALL calbec(npw, dbeta, evc_d, dbetapsi )
             CALL calbec(npw, wfcU, dbeta, wfatdbeta )
             !
             ! dbeta is now used as work space to store vkb
@@ -1532,7 +1532,7 @@ SUBROUTINE dprojdepsilon_gamma ( spsi, ik, ipol, jpol, nb_s, nb_e, mykey, dproj 
             ENDDO
             !
             CALL calbec(npw, wfcU, dbeta, wfatbeta )
-            CALL calbec(npw, dbeta, evc, betapsi0 )
+            CALL calbec(npw, dbeta, evc_d, betapsi0 )
             !
             ! here starts band parallelization
             ! beta is here used as work space to calculate dbetapsi

@@ -28,7 +28,7 @@ SUBROUTINE commutator_Vhubx_psi(ik, nbnd_calc, vpol, dpsi)
   !
   USE kinds,          ONLY : DP
   USE io_files,       ONLY : iunhub, iunhub_noS, nwordwfcU
-  USE wavefunctions,  ONLY : evc
+  USE wavefunctions_gpum,  ONLY : evc_d
   USE wvfct,          ONLY : npwx
   USE ions_base,      ONLY : nat, ityp, ntyp => nsp
   USE ldaU,           ONLY : Hubbard_l, Hubbard_U, Hubbard_J0, &
@@ -223,9 +223,9 @@ SUBROUTINE commutator_Vhubx_psi(ik, nbnd_calc, vpol, dpsi)
               CALL vecqqproj (npw, vkb, dkvkb, wfcatomk(:,ihubst), dpqq47(:,ihubst))
               !
               DO ibnd = 1, nbnd_calc
-                 proj3(ibnd,ihubst) = zdotc (npw, dpqq26(:,ihubst), 1, evc(:,ibnd), 1) + &
-                                      zdotc (npw, dpqq47(:,ihubst), 1, evc(:,ibnd), 1) + &
-                                      zdotc (npw, dpqq38(:,ihubst), 1, evc(:,ibnd), 1)
+                 proj3(ibnd,ihubst) = zdotc (npw, dpqq26(:,ihubst), 1, evc_d(:,ibnd), 1) + &
+                                      zdotc (npw, dpqq47(:,ihubst), 1, evc_d(:,ibnd), 1) + &
+                                      zdotc (npw, dpqq38(:,ihubst), 1, evc_d(:,ibnd), 1)
               ENDDO
               !
            ENDIF
@@ -235,8 +235,8 @@ SUBROUTINE commutator_Vhubx_psi(ik, nbnd_calc, vpol, dpsi)
               ! Calculate proj (ihubst,ibnd) = < S_{k}\phi_(k,I,m)| psi(ibnd,ik) >
               ! at ihubst (i.e. I, m).
               !
-              proj1(ibnd,ihubst) = zdotc (npw, swfcatomk(:,ihubst),  1, evc(:,ibnd), 1)
-              proj2(ibnd,ihubst) = zdotc (npw, dkwfcatomk(:,ihubst), 1, evc(:,ibnd), 1)
+              proj1(ibnd,ihubst) = zdotc (npw, swfcatomk(:,ihubst),  1, evc_d(:,ibnd), 1)
+              proj2(ibnd,ihubst) = zdotc (npw, dkwfcatomk(:,ihubst), 1, evc_d(:,ibnd), 1)
               !
            ENDDO
            !

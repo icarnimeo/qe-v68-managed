@@ -23,7 +23,6 @@ SUBROUTINE stres_knl_gpu( sigmanlc, sigmakin )
   USE wvfct,                ONLY: npwx, nbnd, wg
   USE control_flags,        ONLY: gamma_only, use_gpu
   USE noncollin_module,     ONLY: noncolin, npol
-  USE wavefunctions,        ONLY: evc
   USE mp_pools,             ONLY: inter_pool_comm
   USE mp_bands,             ONLY: intra_bgrp_comm
   USE mp,                   ONLY: mp_sum
@@ -69,7 +68,7 @@ SUBROUTINE stres_knl_gpu( sigmanlc, sigmakin )
   !
   DO ik = 1, nks
      IF ( nks > 1 ) THEN
-        CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+        CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
         CALL using_evc(2)
         CALL using_evc_d(0)
      ENDIF 

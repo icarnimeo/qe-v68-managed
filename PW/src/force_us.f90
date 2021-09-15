@@ -23,7 +23,7 @@ SUBROUTINE force_us( forcenl )
   USE wvfct,                ONLY : nbnd, npwx, wg, et
   USE lsda_mod,             ONLY : lsda, current_spin, isk, nspin
   USE symme,                ONLY : symvector
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   USE noncollin_module,     ONLY : npol, noncolin
   USE spin_orb,             ONLY : lspinorb
   USE io_files,             ONLY : iunwfc, nwordwfc
@@ -75,7 +75,7 @@ SUBROUTINE force_us( forcenl )
      npw = ngk (ik)
 
      IF ( nks > 1 ) THEN
-        CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+        CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
         CALL using_evc(1)
         IF ( nkb > 0 ) CALL using_vkb(1)
         IF ( nkb > 0 ) CALL init_us_2( npw, igk_k(1,ik), xk(1,ik), vkb )
@@ -83,7 +83,7 @@ SUBROUTINE force_us( forcenl )
      !
      CALL using_vkb(0); 
      CALL using_becp_auto(2)
-     CALL calbec( npw, vkb, evc, becp )
+     CALL calbec( npw, vkb, evc_d, becp )
      !
      DO ipol = 1, 3
 !$omp parallel do collapse(2) private(ig)
@@ -94,7 +94,7 @@ SUBROUTINE force_us( forcenl )
         ENDDO
 !$omp end parallel do
         !
-        CALL calbec( npw, vkb1, evc, dbecp )
+        CALL calbec( npw, vkb1, evc_d, dbecp )
         !
         IF ( gamma_only ) THEN
            !

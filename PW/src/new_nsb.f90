@@ -32,7 +32,7 @@ SUBROUTINE new_nsb( ns )
   USE symm_base,            ONLY : nsym, irt
   USE wvfct,                ONLY : nbnd, npw, npwx, wg
   USE control_flags,        ONLY : gamma_only
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   USE io_files,             ONLY : nwordwfc, iunwfc, nwordwfcU, iunhub
   USE buffers,              ONLY : get_buffer
   USE mp_pools,             ONLY : inter_pool_comm
@@ -75,7 +75,7 @@ SUBROUTINE new_nsb( ns )
      !
      npw = ngk(ik)
      !
-     IF (nks > 1) CALL get_buffer (evc, nwordwfc, iunwfc, ik)
+     IF (nks > 1) CALL get_buffer (evc_d, nwordwfc, iunwfc, ik)
      !
      ! make the projection
      !
@@ -84,7 +84,7 @@ SUBROUTINE new_nsb( ns )
         !CALL compute_pproj( ik, q_ae, proj )
      ELSE
         IF (nks > 1) CALL get_buffer (wfcU, nwordwfcU, iunhub, ik)
-        CALL calbec ( npw, wfcU, evc, proj )
+        CALL calbec ( npw, wfcU, evc_d, proj )
      END IF
      !
      ! compute the occupation matrix (ns_{I,s,m1,m2}) of the

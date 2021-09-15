@@ -24,7 +24,7 @@ SUBROUTINE new_evc()
   USE lsda_mod,             ONLY : lsda, current_spin, nspin, isk
   USE wvfct,                ONLY : nbnd, npwx, wg, et
   USE control_flags,        ONLY : gamma_only, iverbosity
-  USE wavefunctions,        ONLY : evc
+  USE wavefunctions_gpum,        ONLY : evc_d
   USE noncollin_module,     ONLY : noncolin, npol
   USE gvect,                ONLY : gstart
   USE io_files,             ONLY : nwordwfc, iunwfc, nwordatwfc, iunsat
@@ -71,7 +71,7 @@ SUBROUTINE new_evc()
      IF (lsda) current_spin = isk(ik)
      npw = ngk(ik)
      IF (nks > 1) &
-        CALL get_buffer( evc, nwordwfc, iunwfc, ik )
+        CALL get_buffer( evc_d, nwordwfc, iunwfc, ik )
      IF (nks > 1) CALL using_evc(2)
      !
      CALL get_buffer( swfcatom, nwordatwfc, iunsat, ik )
@@ -83,14 +83,14 @@ SUBROUTINE new_evc()
            !
            IF ( gamma_only ) THEN 
               proj (iatwfc, ibnd) = 2.d0 * &
-                    ddot(2*npw, swfcatom (1, iatwfc), 1, evc (1, ibnd), 1) 
+                    ddot(2*npw, swfcatom (1, iatwfc), 1, evc_d (1, ibnd), 1) 
               IF (gstart == 2) proj (iatwfc, ibnd) = proj (iatwfc, ibnd) - &
-                    swfcatom (1, iatwfc) * evc (1, ibnd)
+                    swfcatom (1, iatwfc) * evc_d (1, ibnd)
            ELSE 
-                   proj(iatwfc,ibnd) = dot_product(swfcatom(1:npw,iatwfc),evc(1:npw,ibnd))
+                   proj(iatwfc,ibnd) = dot_product(swfcatom(1:npw,iatwfc),evc_d(1:npw,ibnd))
               IF (noncolin) &
                  proj(iatwfc,ibnd) = proj(iatwfc,ibnd) + &
-                      dot_product(swfcatom(npwx+1:npwx+npw,iatwfc),evc(npwx+1:npwx+npw,ibnd))
+                      dot_product(swfcatom(npwx+1:npwx+npw,iatwfc),evc_d(npwx+1:npwx+npw,ibnd))
            ENDIF
            !
         ENDDO
@@ -137,9 +137,9 @@ SUBROUTINE new_evc()
            IF (ind(ibnd) > natomwfc) THEN
               DO jbnd = current_band, nbnd
                  IF (ind(jbnd) <= natomwfc) THEN
-                    aux(:,1) = evc(:,ind(ibnd))
-                    evc(:,ind(ibnd)) = evc(:,ind(jbnd))
-                    evc(:,ind(jbnd)) = aux(:,1)
+                    aux(:,1) = evc_d(:,ind(ibnd))
+                    evc_d(:,ind(ibnd)) = evc_d(:,ind(jbnd))
+                    evc_d(:,ind(jbnd)) = aux(:,1)
                     aux_proj(:,1) = proj(:,ind(ibnd))
                     proj(:,ind(ibnd)) = proj(:,ind(jbnd))
                     proj(:,ind(jbnd)) = aux_proj(:,1)
@@ -234,13 +234,13 @@ SUBROUTINE new_evc()
            DO ibnd = 1, nsize 
               DO jbnd = 1,nsize
                  aux(:,ibnd) = aux(:,ibnd) + v(jbnd,ibnd)* &
-                                     evc(:,start_band(igroup)+jbnd-1)
+                                     evc_d(:,start_band(igroup)+jbnd-1)
                  aux_proj(:,ibnd) = aux_proj(:,ibnd)+ v(jbnd,ibnd)* &
                                      proj(:,start_band(igroup)+jbnd-1)
               ENDDO
            ENDDO
            CALL using_evc(1)
-           evc(:,start_band(igroup):start_band(igroup)+nsize-1)= aux(:,:)
+           evc_d(:,start_band(igroup):start_band(igroup)+nsize-1)= aux(:,:)
            proj(:,start_band(igroup):start_band(igroup)+nsize-1)= aux_proj(:,:)
            DEALLOCATE( aux )
            DEALLOCATE( aux_proj )
@@ -266,10 +266,10 @@ SUBROUTINE new_evc()
            ENDIF
         ENDDO
         used_atwfc(current_band) = 1
-        aux(:,current_band) = evc(:,ibnd) 
+        aux(:,current_band) = evc_d(:,ibnd) 
         wband(current_band) = et(ibnd,ik)
      ENDDO
-     evc(:,1:natomwfc) = aux(:,:)
+     evc_d(:,1:natomwfc) = aux(:,:)
      et(1:natomwfc,ik) = wband(1:natomwfc)
      DEALLOCATE( aux )
      !
@@ -277,7 +277,7 @@ SUBROUTINE new_evc()
      !
      ! CALL using_evc(1) (already done above, no functions call in between)
      IF (nks > 1) THEN
-        CALL save_buffer( evc, nwordwfc, iunwfc, ik )
+        CALL save_buffer( evc_d, nwordwfc, iunwfc, ik )
      ENDIF
   ENDDO
   !

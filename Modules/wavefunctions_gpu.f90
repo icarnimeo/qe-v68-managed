@@ -32,7 +32,8 @@
      COMPLEX(DP), ALLOCATABLE :: psic_nc_d(:, :)
      !
 #if defined(__CUDA)
-     attributes (DEVICE) :: evc_d, psic_d, psic_nc_d
+     attributes (MANAGED) :: evc_d
+     attributes (DEVICE) :: psic_d, psic_nc_d
 #endif
 
      LOGICAL :: evc_ood = .false.    ! used to flag out of date variables
@@ -51,7 +52,7 @@
          !  1 -> inout , the variable needs to be synchronized AND will be changed
          !  2 -> out , NO NEED to synchronize the variable, everything will be overwritten
          !
-         USE wavefunctions, ONLY : evc
+!        USE wavefunctions, ONLY : evc_d
          implicit none
          INTEGER, INTENT(IN) :: intento
          CHARACTER(len=*), INTENT(IN), OPTIONAL :: debug_info
@@ -63,19 +64,19 @@
          !
          IF (evc_ood) THEN
              IF ((.not. allocated(evc_d)) .and. (intento_ < 2)) THEN
-                CALL errore('using_evc_d', 'PANIC: sync of evc from evc_d with unallocated array. Bye!!', 1)
+                CALL errore('using_evc_d', 'PANIC: sync of evc_d from evc_d with unallocated array. Bye!!', 1)
                 stop
              END IF
-             IF (.not. allocated(evc)) THEN
+             IF (.not. allocated(evc_d)) THEN
                 IF (intento_ /= 2) THEN
-                   print *, "WARNING: sync of evc with unallocated array and intento /= 2? Changed to 2!"
+                   print *, "WARNING: sync of evc_d with unallocated array and intento /= 2? Changed to 2!"
                    intento_ = 2
                 END IF
                 ! IF (intento_ > 0)    evc_d_ood = .true.
              END IF
              IF (intento_ < 2) THEN
-                IF ( iverbosity > 0 ) print *, "Really copied evc D->H"
-                evc = evc_d
+                IF ( iverbosity > 0 ) print *, "Really copied evc_d D->H"
+!               evc_d = evc_d
              END IF
              evc_ood = .false.
          ENDIF
@@ -85,7 +86,7 @@
      !
      SUBROUTINE using_evc_d(intento, debug_info)
          !
-         USE wavefunctions, ONLY : evc
+!        USE wavefunctions, ONLY : evc_d
          implicit none
          INTEGER, INTENT(IN) :: intento
          CHARACTER(len=*), INTENT(IN), OPTIONAL :: debug_info
@@ -93,24 +94,24 @@
          !
          IF (PRESENT(debug_info) ) print *, "using_evc_d ", debug_info, evc_d_ood
          !
-         IF (.not. allocated(evc)) THEN
+         IF (.not. allocated(evc_d)) THEN
              IF (intento /= 2) print *, "WARNING: sync of evc_d with unallocated array and intento /= 2?"
              IF (allocated(evc_d)) DEALLOCATE(evc_d)
              evc_d_ood = .false.
              RETURN
          END IF
-         ! here we know that evc is allocated, check if size is 0
-         IF ( SIZE(evc) == 0 ) THEN
+         ! here we know that evc_d is allocated, check if size is 0
+         IF ( SIZE(evc_d) == 0 ) THEN
              print *, "Refusing to allocate 0 dimensional array evc_d. If used, code will crash."
              RETURN
          END IF
          !
          IF (evc_d_ood) THEN
-             IF ( allocated(evc_d) .and. (SIZE(evc_d)/=SIZE(evc))) deallocate(evc_d)
-             IF (.not. allocated(evc_d)) ALLOCATE(evc_d(DIMS2D(evc)))  ! MOLD does not work on all compilers
+             IF ( allocated(evc_d) .and. (SIZE(evc_d)/=SIZE(evc_d))) deallocate(evc_d)
+             IF (.not. allocated(evc_d)) ALLOCATE(evc_d(DIMS2D(evc_d)))  ! MOLD does not work on all compilers
              IF (intento < 2) THEN
-                IF ( iverbosity > 0 ) print *, "Really copied evc H->D"
-                evc_d = evc
+                IF ( iverbosity > 0 ) print *, "Really copied evc_d H->D"
+!               evc_d = evc_d
              END IF
              evc_d_ood = .false.
          ENDIF
